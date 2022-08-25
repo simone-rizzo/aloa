@@ -1,0 +1,1 @@
+{'bootstrap': False, 'criterion': 'gini', 'max_depth': 100, 'max_features': 'auto', 'min_samples_leaf': 10, 'min_samples_split': 5, 'n_estimators': 350}
