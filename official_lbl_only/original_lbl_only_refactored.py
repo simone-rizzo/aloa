@@ -109,8 +109,6 @@ target_train_label = pd.read_csv("../data/adult_original_train_label.csv")
 target_test_set = pd.read_csv("../data/adult_original_test_set.csv")
 target_test_label = pd.read_csv("../data/adult_original_test_label.csv")
 
-undersample = RandomUnderSampler(sampling_strategy="majority")
-target_test_set, target_test_label = undersample.fit_resample(target_test_set, target_test_label)
 
 # Source model is model trained with similar data of the target one with the same architecture.
 source_train_set = pd.read_csv("../data/adult_noise_shadow_labelled")

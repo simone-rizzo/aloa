@@ -17,8 +17,7 @@ which uses the convidence vector probability.
 
 
 class ConfidenceAttack(Attack):
-    def __init__(self, TS_PERC, N_SHADOW_MODELS):
-        self.TS_PERC = TS_PERC
+    def __init__(self, N_SHADOW_MODELS):
         self.N_SHADOW_MODELS = N_SHADOW_MODELS
         self.shadow_models = []
 
@@ -69,16 +68,10 @@ class ConfidenceAttack(Attack):
             self.attack_dataset.append(df_final)
 
     def attack_workflow(self):
-        self.split_noise_dataset()
         self.train_shadow_models()
         self.train_attack_models()
         self.test_attack()
         pass
-
-    def split_noise_dataset(self):
-        self.noise_train_set, self.noise_test_set, self.noise_train_label, self.noise_test_label = train_test_split(
-            self.noise_train_set, self.noise_train_label, stratify=self.noise_train_label,
-            test_size=TS_PERC, random_state=1)
 
     def train_attack_models(self):
         attack_dataset = pd.concat(self.attack_dataset)
@@ -162,7 +155,6 @@ class ConfidenceAttack(Attack):
 
 
 if __name__ == "__main__":
-    TS_PERC = 0.2
     N_SHADOW_MODELS = 8
-    att = ConfidenceAttack(TS_PERC, N_SHADOW_MODELS)
+    att = ConfidenceAttack(N_SHADOW_MODELS)
     att.start_attack()
