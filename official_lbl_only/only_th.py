@@ -41,10 +41,10 @@ def get_max_accuracy(y_true, probs, thresholds=None):
   return max_accuracy, max_accuracy_threshold, max_precision, max_precision_threshold, report
 
 
-tr_score = genfromtxt('tr_scores.csv', delimiter=',')
-ts_score = genfromtxt('ts_scores.csv', delimiter=',')
-target_tr_scores = genfromtxt('target_tr_scores.csv', delimiter=',')
-target_ts_scores = genfromtxt('target_ts_scores.csv', delimiter=',')
+tr_score = genfromtxt('tr_scores_balanced100.csv', delimiter=',')
+ts_score = genfromtxt('ts_scores_balanced100.csv', delimiter=',')
+target_tr_scores = genfromtxt('target_tr_scores_balanced100.csv', delimiter=',')
+target_ts_scores = genfromtxt('target_ts_scores_balanced100.csv', delimiter=',')
 
 # True label for attack model (1-0 in out)
 source_m = np.concatenate([np.ones(tr_score.shape[0]), np.zeros(ts_score.shape[0])], axis=0)
@@ -63,8 +63,8 @@ acc_test_t, _, _, _, report = get_max_accuracy(target_m, target_jointed_scores, 
 print(report)
 _, _, prec_test_t, _, report = get_max_accuracy(target_m, target_jointed_scores, thresholds=[tprec])
 # write_report = open("measures_lbl_only_original_attack_nn.txt", "w")
-write_report = open("measures_lbl_only_original_attack.txt", "w")
-write_report.write(report)
+# write_report = open("measures_lbl_only_original_attack.txt", "w")
+# write_report.write(report)
 print("acc src: {}, acc test (best thresh): {}, acc test (src thresh): {}, thresh: {}".format(acc_source, acc_test,
                                                                                                 acc_test_t, t))
 print("prec src: {}, prec test (best thresh): {}, prec test (src thresh): {}, thresh: {}".format(prec_source, prec_test,

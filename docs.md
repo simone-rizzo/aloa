@@ -67,6 +67,14 @@ generating noised examples.
 | My lblonly w label | 0.82 | 0.75 | 0.78 |
 | Original lblonly | 0.82 | 0.88 | 0.85 |
 
+## MIA attacks on Random forest model balanced DS
+| Attack type     | Precision | Recall | F1 score | 
+| ----------- | ----------- | ----------- | ----------- |
+| Conf vector | 0. | 0. | 0. |
+| My lblonly | 0. | 0. | 0. |
+| My lblonly w label | 0. | 0. | 0. |
+| Original lblonly | 0. | 0. | 0. |
+
 ## MIA attacks on Neural Network
 | Attack type     | Precision | Recall | F1 score | 
 | ----------- | ----------- | ----------- | ----------- |

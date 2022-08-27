@@ -1,5 +1,4 @@
 import sys
-
 import pandas as pd
 from imblearn.under_sampling import RandomUnderSampler
 from numpy import savetxt
@@ -110,6 +109,9 @@ target_train_label = pd.read_csv("../data/adult_original_train_label.csv")
 target_test_set = pd.read_csv("../data/adult_original_test_set.csv")
 target_test_label = pd.read_csv("../data/adult_original_test_label.csv")
 
+undersample = RandomUnderSampler(sampling_strategy="majority")
+target_test_set, target_test_label = undersample.fit_resample(target_test_set, target_test_label)
+
 # Source model is model trained with similar data of the target one with the same architecture.
 source_train_set = pd.read_csv("../data/adult_noise_shadow_labelled")
 source_train_label = source_train_set.pop("class")
@@ -125,18 +127,20 @@ source_model = train_target_model()
 # Source
 tr_scores = carlini_binary_rand_robust(source_model, tr.values, tr_l, noise_samples=NOISE_SAMPLES, p=0.6)
 ts_scores = carlini_binary_rand_robust(source_model, source_test_set.values, source_test_label.values, noise_samples=NOISE_SAMPLES, p=0.6)
-savetxt('tr_scores_{}.csv'.format(NOISE_SAMPLES), tr_scores, delimiter=',')
-savetxt('ts_scores_{}.csv'.format(NOISE_SAMPLES), ts_scores, delimiter=',')
+savetxt('tr_scores_balanced{}.csv'.format(NOISE_SAMPLES), tr_scores, delimiter=',')
+savetxt('ts_scores_balanced{}.csv'.format(NOISE_SAMPLES), ts_scores, delimiter=',')
 
 # Target
 target_tr_scores = carlini_binary_rand_robust(target_model, target_train_set.values, target_train_label.values, noise_samples=NOISE_SAMPLES, p=0.6)
 target_ts_scores = carlini_binary_rand_robust(source_model, target_test_set.values, target_test_label.values, noise_samples=NOISE_SAMPLES, p=0.6)
-savetxt('target_tr_scores_{}.csv'.format(NOISE_SAMPLES), target_tr_scores, delimiter=',')
-savetxt('target_ts_scores_{}.csv'.format(NOISE_SAMPLES), target_ts_scores, delimiter=',')
+savetxt('target_tr_scores_balanced{}.csv'.format(NOISE_SAMPLES), target_tr_scores, delimiter=',')
+savetxt('target_ts_scores_balanced{}.csv'.format(NOISE_SAMPLES), target_ts_scores, delimiter=',')
 
 # True label for attack model (1-0 in out)
-source_m = np.concatenate([np.ones(tr_scores.shape[0]), np.zeros(ts_scores.shape[0])], axis=0)
-jointed_scores = np.concatenate([tr_scores, ts_scores], axis=0)
+print(tr_scores.shape)
+print(ts_scores.shape)
+source_m = np.concatenate([np.ones(ts_scores.shape[0]), np.zeros(ts_scores.shape[0])], axis=0)
+jointed_scores = np.concatenate([tr_scores[:ts_scores.shape[0]], ts_scores], axis=0)
 
 # True label for attack model (1-0 in out)
 target_m = np.concatenate([np.ones(target_tr_scores.shape[0]), np.zeros(target_ts_scores.shape[0])], axis=0)
