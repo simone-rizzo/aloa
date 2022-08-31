@@ -25,7 +25,7 @@ class ConfidenceAttack(Attack):
         self.tr_chunk_size = ceil(self.noise_train_set.shape[0] / N_SHADOW_MODELS)  # chunk for the train set.
         self.ts_chunk_size = ceil(self.noise_test_set.shape[0] / N_SHADOW_MODELS)  # chunk for the test set.
         self.attack_dataset = []
-        processes = []
+
         # For each shadow model
         for m in range(N_SHADOW_MODELS):
             # We take it's chunk of training data and test data
@@ -130,7 +130,12 @@ class ConfidenceAttack(Attack):
         classes = list(df_final['class_labels'].unique())
         print(df_final['target_label'].value_counts())
         print(df_final['class_labels'].value_counts())
-
+        ts_l = df_final.pop("target_label")
+        print(df_final.shape)
+        """undersample = RandomUnderSampler(sampling_strategy="majority")
+        df_new, ts_l = undersample.fit_resample(df_final, ts_l)
+        df_final = pd.concat([df_new, ts_l], axis=1)
+        print(df_final.shape)"""
         test_l = []
         predicted = []
 

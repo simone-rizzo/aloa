@@ -55,7 +55,7 @@ def robustness_score(model, dataset: pd.DataFrame, n):
             perturbed_row[con_vals:] = bernoulli_noise(perturbed_row[con_vals:], fb)
             variations.append(perturbed_row)
         variations = np.array(variations)
-        output = model.predict(variations, verbose=0)  # we pass the variations inside the model
+        output = model.predict(variations)  # we pass the variations inside the model
         _, c = np.unique(output, return_counts=True)  # we obtain the count of the majority output.
         score = c.max()/n  # we scale the value by dividing it to n.
         # print(score)

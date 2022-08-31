@@ -46,8 +46,8 @@ predicted = []
 for c in classes:
     print("Results for class: {}".format(c))
     # Obtain the correct attack model for the class c.
-    # att_c = pickle.load(open("../attacker/lblonly_attacker_class_{}.sav".format(c), 'rb'))
-    att_c = pickle.load(open("../attacker/lblonly_attacker_truelabel_class_{}.sav".format(c), 'rb'))
+    att_c = pickle.load(open("../attacker/lblonly_attacker_class_{}.sav".format(c), 'rb'))
+    # att_c = pickle.load(open("../attacker/lblonly_attacker_truelabel_class_{}.sav".format(c), 'rb'))
 
     # Filter the dataset for data of the same class_label
     test = df_final[df_final['class_labels'] == c]
@@ -65,5 +65,5 @@ print("Jointed:")
 report = classification_report(test_l, predicted)
 print(report)
 
-write_report = open("../attacker/lblonly_truelabel_jointed_test_measures.txt.txt", "w")
-write_report.write(report)
+# write_report = open("../attacker/lblonly_truelabel_jointed_test_measures.txt.txt", "w")
+# write_report.write(report)

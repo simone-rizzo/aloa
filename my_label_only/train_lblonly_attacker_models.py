@@ -9,8 +9,8 @@ from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 from sklearn import tree
 
-# path = "../data/shadow_label_only"
-path = "../data/shadow_label_only_truelabel"
+path = "../data/shadow_label_only"
+# path = "../data/shadow_label_only_truelabel"
 attack_dataset = pd.concat([pd.read_csv(path+"/"+n) for n in os.listdir(path)])
 classes = list(attack_dataset['class_label'].unique())
 for c in classes:
@@ -45,7 +45,7 @@ for c in classes:
     print(report)
 
     # Saving of the model.
-    # filename = '../attacker/lblonly_attacker_class_{}.sav'.format(c)
-    filename = '../attacker/lblonly_attacker_truelabel_class_{}.sav'.format(c)
+    filename = '../attacker/lblonly_attacker_class_{}.sav'.format(c)
+    # filename = '../attacker/lblonly_attacker_truelabel_class_{}.sav'.format(c)
     pickle.dump(mdl, open(filename, 'wb'))
 

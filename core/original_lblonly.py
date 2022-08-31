@@ -127,6 +127,9 @@ class Original_lblonly(Attack):
         self.bb_data_scores = np.concatenate([target_tr_scores, target_ts_scores], axis=0)
 
     def train_test_attackmodel(self):
+        undersample = RandomUnderSampler(sampling_strategy="majority")
+        self.bb_data_scores, self.bb_data_label = undersample.fit_resample(self.bb_data_scores.reshape(-1, 1), self.bb_data_label)
+        self.bb_data_scores = np.ndarray.flatten(self.bb_data_scores)
         # get the test accuracy at the threshold selected on the source data
         acc_source, t, prec_source, tprec, report = self.get_max_accuracy(self.noise_data_label, self.noise_data_scores)
         print(report)

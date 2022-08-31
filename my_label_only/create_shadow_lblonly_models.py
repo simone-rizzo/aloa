@@ -62,8 +62,8 @@ for m in tqdm(range(N_SHADOW_MODELS)):
 
     # Report on training set
     pred_tr_labels = shadow.predict(tr)
-    # pred_tr_robustness = robustness_score(shadow, tr, 100) # old implementation
-    pred_tr_robustness = robustness_score_label(shadow, tr, tr_l, 100)
+    pred_tr_robustness = robustness_score(shadow, tr, 100) # old implementation
+    # pred_tr_robustness = robustness_score_label(shadow, tr, tr_l, 100)
     df_in = pd.DataFrame(pred_tr_robustness)
     df_in["class_label"] = pred_tr_labels
     df_in["target_label"] = 1
@@ -72,8 +72,8 @@ for m in tqdm(range(N_SHADOW_MODELS)):
 
     # Test
     pred_labels = shadow.predict(ts)
-    # pred_ts_robustness = robustness_score(shadow, ts, 100) # old implementation
-    pred_ts_robustness = robustness_score_label(shadow, ts, ts_l, 100)  # new implementation
+    pred_ts_robustness = robustness_score(shadow, ts, 100) # old implementation
+    # pred_ts_robustness = robustness_score_label(shadow, ts, ts_l, 100)  # new implementation
     df_out = pd.DataFrame(pred_ts_robustness)
     df_out["class_label"] = pred_labels
     df_out["target_label"] = 0
@@ -82,5 +82,5 @@ for m in tqdm(range(N_SHADOW_MODELS)):
 
     # We merge the dataframes with IN/OUT target and we save it.
     df_final = pd.concat([df_in, df_out])
-    # df_final.to_csv("../data/shadow_label_only/shadow_{}_predicted_ds".format(m), index=False)
-    df_final.to_csv("../data/shadow_label_only_truelabel/shadow_{}_predicted_ds_truelabel".format(m), index=False)
+    df_final.to_csv("../data/shadow_label_only/shadow_{}_predicted_ds".format(m), index=False)
+    # df_final.to_csv("../data/shadow_label_only_truelabel/shadow_{}_predicted_ds_truelabel".format(m), index=False)

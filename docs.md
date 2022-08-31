@@ -70,10 +70,10 @@ generating noised examples.
 ## MIA attacks on Random forest model balanced DS
 | Attack type     | Precision | Recall | F1 score | 
 | ----------- | ----------- | ----------- | ----------- |
-| Conf vector | 0. | 0. | 0. |
+| Conf vector | 0.57 | 0.75 | 0.65 |
 | My lblonly | 0. | 0. | 0. |
 | My lblonly w label | 0. | 0. | 0. |
-| Original lblonly | 0. | 0. | 0. |
+| Original lblonly | 0.53 | 0.89 | 0.66 |
 
 ## MIA attacks on Neural Network
 | Attack type     | Precision | Recall | F1 score | 
