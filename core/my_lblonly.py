@@ -8,7 +8,6 @@ from tqdm import tqdm
 from sklearn.ensemble import RandomForestClassifier
 from core.attack import Attack
 import pandas as pd
-
 from my_label_only.robustness_score import robustness_score
 
 
@@ -29,14 +28,14 @@ class My_lblonly(Attack):
         return rf
 
     def train_attack_models(self):
-        attack_dataset = pd.concat(self.attack_dataset)
+        attack_dataset = pd.concat(self.attack_dataset) # Concatenate all the shadow datasets.
         self.attack_models = []
         classes = list(attack_dataset['class_label'].unique())
         for c in classes:
             print("Class:{}".format(c))
-            tr = attack_dataset[attack_dataset['class_label'] == c]
-            tr.pop('class_label')
-            tr_label = tr.pop('target_label')
+            tr = attack_dataset[attack_dataset['class_label'] == c] # filtering by class
+            tr.pop('class_label') # we then remove the class label
+            tr_label = tr.pop('target_label') # we want to predict he target label IN-OUT
 
             # Print of the unbalanced dataset
             unique, counts = np.unique(tr_label, return_counts=True)
@@ -54,7 +53,6 @@ class My_lblonly(Attack):
                                                                             test_size=0.20, random_state=1)
 
             # We train the attacker model.
-            # mdl = tree.DecisionTreeClassifier()
             mdl = RandomForestClassifier()
             mdl.fit(train_set.values, train_label.values)
 
@@ -62,7 +60,8 @@ class My_lblonly(Attack):
             pred = mdl.predict(test_set.values)
             report = classification_report(test_label, pred)
             print(report)
-
+            write_report = open("report_attack_test{}.txt".format(c), "w")
+            write_report.write(report)
             # We merge all the attack models
             self.attack_models.append(mdl)
 
@@ -88,24 +87,30 @@ class My_lblonly(Attack):
 
             # Report on training set
             pred_tr_labels = shadow.predict(tr)
-            pred_tr_robustness = robustness_score(shadow, tr, 100) # old implementation
+            pred_tr_robustness = robustness_score(shadow, tr, self.NOISE_SAMPLES) # old implementation
             df_in = pd.DataFrame(pred_tr_robustness)
             df_in["class_label"] = pred_tr_labels
             df_in["target_label"] = 1
             report = classification_report(tr_l, pred_tr_labels)
             print(report)
+            write_report = open("report_shadow_train{}.txt".format(m), "w")
+            write_report.write(report)
 
             # Test
             pred_labels = shadow.predict(ts)
-            pred_ts_robustness = robustness_score(shadow, ts, 100) # old implementation
+            # pred_ts_robustness = robustness_score(shadow, ts, self.NOISE_SAMPLES) # old implementation
+            pred_ts_robustness = robustness_score_label(shadow, ts, ts_l, self.NOISE_SAMPLES) # old implementation
             df_out = pd.DataFrame(pred_ts_robustness)
             df_out["class_label"] = pred_labels
             df_out["target_label"] = 0
             report = classification_report(ts_l, pred_labels)
             print(report)
-
+            write_report = open("report_shadow_test{}.txt".format(m), "w")
+            write_report.write(report)
             # We merge the dataframes with IN/OUT target and we save it.
             df_final = pd.concat([df_in, df_out])
+            # Save the dataset
+            df_final.to_csv("shadow_df{}.csv".format(m))
             self.attack_dataset.append(df_final)
 
     def test_attack(self):
@@ -125,10 +130,17 @@ class My_lblonly(Attack):
 
         # Merge the results
         df_final = pd.concat([df_in, df_out])
+        df_final.to_csv("test_dataset_perturbed.csv") # we save the merged dataset.
         classes = list(df_final['class_labels'].unique())
         print(df_final['target_label'].value_counts())
         print(df_final['class_labels'].value_counts())
 
+        # Undersampling
+        ts_l = df_final.pop("target_label")
+        undersample = RandomUnderSampler(sampling_strategy="majority")
+        df_new, ts_l = undersample.fit_resample(df_final, ts_l)
+        df_final = pd.concat([df_new, ts_l], axis=1)
+        print(df_final.shape)
         test_l = []
         predicted = []
 

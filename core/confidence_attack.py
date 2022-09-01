@@ -130,9 +130,10 @@ class ConfidenceAttack(Attack):
         classes = list(df_final['class_labels'].unique())
         print(df_final['target_label'].value_counts())
         print(df_final['class_labels'].value_counts())
+        """
         ts_l = df_final.pop("target_label")
         print(df_final.shape)
-        """undersample = RandomUnderSampler(sampling_strategy="majority")
+        undersample = RandomUnderSampler(sampling_strategy="majority")
         df_new, ts_l = undersample.fit_resample(df_final, ts_l)
         df_final = pd.concat([df_new, ts_l], axis=1)
         print(df_final.shape)"""

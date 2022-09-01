@@ -71,8 +71,8 @@ generating noised examples.
 | Attack type     | Precision | Recall | F1 score | 
 | ----------- | ----------- | ----------- | ----------- |
 | Conf vector | 0.57 | 0.75 | 0.65 |
-| My lblonly | 0. | 0. | 0. |
-| My lblonly w label | 0. | 0. | 0. |
+| My lblonly | 0.49 | 0.64 | 0.55 |
+| My lblonly w label | 0.56 | 0.42 | 0.48 |
 | Original lblonly | 0.53 | 0.89 | 0.66 |
 
 ## MIA attacks on Neural Network
