@@ -9,6 +9,7 @@ from sklearn.model_selection import train_test_split
 from sklearn import tree
 from sklearn.metrics import classification_report
 
+from bboxes.nnbb import NeuralNetworkBlackBox
 from bboxes.rfbb import RandomForestBlackBox
 from core.attack import Attack
 
@@ -19,12 +20,18 @@ which uses the convidence vector probability.
 
 
 class ConfidenceAttack(Attack):
-    def __init__(self, bb, N_SHADOW_MODELS):
+    def __init__(self, bb, N_SHADOW_MODELS, is_nn=False):
         super().__init__(bb)
         self.N_SHADOW_MODELS = N_SHADOW_MODELS
         self.shadow_models = []
+        self.is_nn = is_nn
 
     def train_shadow_models(self):
+        if self.is_nn:
+            # Here we normalize the training set and the test set
+            self.noise_train_set, scaler = self.normalize(self.noise_train_set, dataFrame=True)
+            self.noise_test_set, _ = self.normalize(self.noise_test_set, scaler, dataFrame=True)
+
         self.tr_chunk_size = ceil(self.noise_train_set.shape[0] / N_SHADOW_MODELS)  # chunk for the train set.
         self.ts_chunk_size = ceil(self.noise_test_set.shape[0] / N_SHADOW_MODELS)  # chunk for the test set.
         self.attack_dataset = []
@@ -42,8 +49,7 @@ class ConfidenceAttack(Attack):
             tr, tr_l = undersample.fit_resample(tr, tr_l)
 
             # we train the model.
-            # shadow = trainDTClassifier(tr, tr_l)
-            shadow = self.bb.train_model(tr, tr_l)
+            shadow = self.bb.train_model(tr, np.array(tr_l))
 
             # Report on training set
             pred_tr_labels = shadow.predict(tr)
@@ -114,6 +120,11 @@ class ConfidenceAttack(Attack):
             self.attack_models.append(mdl)
 
     def test_attack(self):
+        if self.is_nn:
+            # Here we normalize the training set and the test set
+            self.train_set, scaler = self.normalize(self.train_set, dataFrame=True)
+            self.test_set, _ = self.normalize(self.test_set, scaler, dataFrame=True)
+
         # Getting predict proba from the black box on tr and assign 1 as target_label
         trainset_predict_proba = self.bb.predict_proba(self.train_set.values)
         class_labels = np.argmax(trainset_predict_proba, axis=1)
@@ -134,12 +145,12 @@ class ConfidenceAttack(Attack):
         print(df_final['target_label'].value_counts())
         print(df_final['class_labels'].value_counts())
 
-        ts_l = df_final.pop("target_label")
+        """ts_l = df_final.pop("target_label")
         print(df_final.shape)
         undersample = RandomUnderSampler(sampling_strategy="majority")
         df_new, ts_l = undersample.fit_resample(df_final, ts_l)
         df_final = pd.concat([df_new, ts_l], axis=1)
-        print(df_final.shape)
+        print(df_final.shape)"""
         test_l = []
         predicted = []
 
@@ -165,6 +176,7 @@ class ConfidenceAttack(Attack):
 
 if __name__ == "__main__":
     N_SHADOW_MODELS = 8
-    bb = RandomForestBlackBox()
-    att = ConfidenceAttack(bb, N_SHADOW_MODELS)
+    # bb = RandomForestBlackBox()
+    bb = NeuralNetworkBlackBox()
+    att = ConfidenceAttack(bb, N_SHADOW_MODELS, True)
     att.start_attack()

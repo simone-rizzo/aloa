@@ -6,17 +6,16 @@ import pickle
 class RandomForestBlackBox(SklearnClassifierWrapper):
     def __init__(self):
         filename = "C:/Users/Simone/Documents/MIA/models/rf/measures_rf_black_box_original.sav"
-        bb = pickle.load(open(filename, 'rb'))
-        super().__init__(bb)
+        self.model = pickle.load(open(filename, 'rb'))
 
     def model(self):
-        return super().model()
+        return self.model()
 
     def predict(self, x):
-        return super().predict(x)
+        return self.model.predict(x)
 
     def predict_proba(self, x):
-        return super().predict_proba(x)
+        return self.model.predict_proba(x)
 
     def train_model(self, x, y):
         rf = RandomForestClassifier()

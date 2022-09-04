@@ -30,9 +30,9 @@ def get_nn_model(input_dim):
     :return:
     """
     inputs = keras.Input(shape=(input_dim,))
-    x = layers.Dense(256, activation="tanh")(inputs)
+    x = layers.Dense(512, activation="tanh")(inputs)
     # x = layers.Dropout(0.1)(x)
-    x = layers.Dense(256, activation="tanh")(x)
+    # x = layers.Dense(512, activation="tanh")(x)
     # x = layers.Dropout(0.1)(x)
     # output = layers.Dense(1, activation="sigmoid")(x)
     output = layers.Dense(2, activation="softmax")(x)
@@ -62,9 +62,9 @@ model = get_nn_model(train_set.shape[1])
 # tr, tr_l = undersample.fit_resample(train_set, train_label.values)
 
 # Compilation of the model and training.
-opt = tf.optimizers.Adam(learning_rate=0.005)
+opt = tf.optimizers.Adam(learning_rate=0.008)
 model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
-model.fit(train_set, train_label, epochs=30, batch_size=32)
+model.fit(train_set, train_label, epochs=100, batch_size=16)
 
 # Performances on training set
 train_prediction = model.predict(train_set)
@@ -83,4 +83,4 @@ print(report)
 # write_report.write(report)
 
 # Saving the model
-model.save('nn_blackbox2.h5')
+model.save('nn_blackbox.h5')
