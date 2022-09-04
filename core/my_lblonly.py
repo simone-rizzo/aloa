@@ -6,13 +6,15 @@ from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 from sklearn.ensemble import RandomForestClassifier
+from bboxes.rfbb import RandomForestBlackBox
 from core.attack import Attack
 import pandas as pd
-from my_label_only.robustness_score import robustness_score
+from my_label_only.robustness_score import robustness_score, robustness_score_label
 
 
 class My_lblonly(Attack):
-    def __init__(self, N_SHADOW_MODELS, NOISE_SAMPLES):
+    def __init__(self, bb, N_SHADOW_MODELS, NOISE_SAMPLES):
+        super().__init__(bb)
         self.N_SHADOW_MODELS = N_SHADOW_MODELS
         self.NOISE_SAMPLES = NOISE_SAMPLES
 
@@ -21,11 +23,6 @@ class My_lblonly(Attack):
         self.train_attack_models()
         self.test_attack()
         pass
-
-    def trainRFClassifier(self, x, y):
-        rf = RandomForestClassifier()
-        rf.fit(x, y)
-        return rf
 
     def train_attack_models(self):
         attack_dataset = pd.concat(self.attack_dataset) # Concatenate all the shadow datasets.
@@ -66,12 +63,12 @@ class My_lblonly(Attack):
             self.attack_models.append(mdl)
 
     def train_shadow_models(self):
-        tr_chunk_size = ceil(self.noise_train_set.shape[0] / N_SHADOW_MODELS)  # chunk for the train set.
-        ts_chunk_size = ceil(self.noise_test_set.shape[0] / N_SHADOW_MODELS)  # chunk for the test set.
+        tr_chunk_size = ceil(self.noise_train_set.shape[0] / self.N_SHADOW_MODELS)  # chunk for the train set.
+        ts_chunk_size = ceil(self.noise_test_set.shape[0] / self.N_SHADOW_MODELS)  # chunk for the test set.
         self.attack_dataset = []
 
         # For each shadow model
-        for m in tqdm(range(N_SHADOW_MODELS)):
+        for m in tqdm(range(self.N_SHADOW_MODELS)):
             # We take it's chunk of training data and test data
             tr = self.noise_train_set.values[m * tr_chunk_size:(m * tr_chunk_size) + tr_chunk_size]
             tr_l = self.noise_train_label.values[m * tr_chunk_size:(m * tr_chunk_size) + tr_chunk_size]
@@ -83,11 +80,13 @@ class My_lblonly(Attack):
             tr, tr_l = undersample.fit_resample(tr, tr_l)
 
             # we train the model.
-            shadow = self.trainRFClassifier(tr, tr_l)
+            shadow = self.bb.train_model(tr, tr_l)
 
             # Report on training set
             pred_tr_labels = shadow.predict(tr)
-            pred_tr_robustness = robustness_score(shadow, tr, self.NOISE_SAMPLES) # old implementation
+            # pred_tr_robustness = robustness_score(shadow, tr, self.NOISE_SAMPLES) # old implementation
+            pred_tr_robustness = robustness_score_label(shadow, tr,tr_l, self.NOISE_SAMPLES) # old implementation
+
             df_in = pd.DataFrame(pred_tr_robustness)
             df_in["class_label"] = pred_tr_labels
             df_in["target_label"] = 1
@@ -115,14 +114,17 @@ class My_lblonly(Attack):
 
     def test_attack(self):
         # Getting predict proba from the black box on tr and assign 1 as target_label
-        trainset_predict_proba = robustness_score(self.bb, self.train_set.values, self.NOISE_SAMPLES) # old one
+        # trainset_predict_proba = robustness_score(self.bb, self.train_set.values, self.NOISE_SAMPLES) # old one
+        trainset_predict_proba = robustness_score_label(self.bb, self.train_set.values, self.train_label.values, self.NOISE_SAMPLES) # old one
+
         class_labels = self.bb.predict(self.train_set.values)
         df_in = pd.DataFrame(trainset_predict_proba)
         df_in['target_label'] = 1
         df_in['class_labels'] = class_labels
 
         # Getting predict proba from the black box on ts and assign 0 as target_label
-        testset_predict_proba = robustness_score(self.bb, self.test_set.values, self.NOISE_SAMPLES) #old one
+        # testset_predict_proba = robustness_score(self.bb, self.test_set.values, self.NOISE_SAMPLES) #old one
+        testset_predict_proba = robustness_score_label(self.bb, self.test_set.values, self.test_label.values, self.NOISE_SAMPLES) #old one
         class_labels2 = self.bb.predict(self.test_set.values)
         df_out = pd.DataFrame(testset_predict_proba)
         df_out['target_label'] = 0
@@ -141,6 +143,7 @@ class My_lblonly(Attack):
         df_new, ts_l = undersample.fit_resample(df_final, ts_l)
         df_final = pd.concat([df_new, ts_l], axis=1)
         print(df_final.shape)
+
         test_l = []
         predicted = []
 
@@ -163,11 +166,14 @@ class My_lblonly(Attack):
         print("Jointed:")
         report = classification_report(test_l, predicted)
         print(report)
+        write_report = open("mtlblonly_report_N_SAMPLES{}.txt".format(self.NOISE_SAMPLES), "w")
+        write_report.write(report)
 
 
 if __name__ == "__main__":
     NOISE_SAMPLES = 1
+    bb = RandomForestBlackBox()
     NOISE_SAMPLES = int(sys.argv[1]) if len(sys.argv) > 1 else NOISE_SAMPLES
     N_SHADOW_MODELS = 8
-    att = My_lblonly(N_SHADOW_MODELS, NOISE_SAMPLES)
+    att = My_lblonly(bb, N_SHADOW_MODELS, 100)
     att.start_attack()

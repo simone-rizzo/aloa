@@ -8,6 +8,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn import tree
 from sklearn.metrics import classification_report
+
+from bboxes.rfbb import RandomForestBlackBox
 from core.attack import Attack
 
 """
@@ -17,7 +19,8 @@ which uses the convidence vector probability.
 
 
 class ConfidenceAttack(Attack):
-    def __init__(self, N_SHADOW_MODELS):
+    def __init__(self, bb, N_SHADOW_MODELS):
+        super().__init__(bb)
         self.N_SHADOW_MODELS = N_SHADOW_MODELS
         self.shadow_models = []
 
@@ -40,7 +43,7 @@ class ConfidenceAttack(Attack):
 
             # we train the model.
             # shadow = trainDTClassifier(tr, tr_l)
-            shadow = self.trainRFClassifier(tr, tr_l)
+            shadow = self.bb.train_model(tr, tr_l)
 
             # Report on training set
             pred_tr_labels = shadow.predict(tr)
@@ -130,13 +133,13 @@ class ConfidenceAttack(Attack):
         classes = list(df_final['class_labels'].unique())
         print(df_final['target_label'].value_counts())
         print(df_final['class_labels'].value_counts())
-        """
+
         ts_l = df_final.pop("target_label")
         print(df_final.shape)
         undersample = RandomUnderSampler(sampling_strategy="majority")
         df_new, ts_l = undersample.fit_resample(df_final, ts_l)
         df_final = pd.concat([df_new, ts_l], axis=1)
-        print(df_final.shape)"""
+        print(df_final.shape)
         test_l = []
         predicted = []
 
@@ -162,5 +165,6 @@ class ConfidenceAttack(Attack):
 
 if __name__ == "__main__":
     N_SHADOW_MODELS = 8
-    att = ConfidenceAttack(N_SHADOW_MODELS)
+    bb = RandomForestBlackBox()
+    att = ConfidenceAttack(bb, N_SHADOW_MODELS)
     att.start_attack()

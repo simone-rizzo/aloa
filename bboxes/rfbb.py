@@ -1,3 +1,4 @@
+from sklearn.ensemble import RandomForestClassifier
 from bboxes.bb_wrapper import SklearnClassifierWrapper
 import pickle
 
@@ -16,6 +17,12 @@ class RandomForestBlackBox(SklearnClassifierWrapper):
 
     def predict_proba(self, x):
         return super().predict_proba(x)
+
+    def train_model(self, x, y):
+        rf = RandomForestClassifier()
+        rf.fit(x, y)
+        return rf
+
 
 
 """

@@ -1,16 +1,18 @@
 import sys
-
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score, roc_curve
 import numpy as np
 from tqdm import tqdm
+
+from bboxes.rfbb import RandomForestBlackBox
 from core.attack import Attack
 from sklearn.metrics import roc_curve, accuracy_score, precision_score, classification_report
 
 
 class Original_lblonly(Attack):
-    def __init__(self, NOISE_SAMPLES):
+    def __init__(self, bb, NOISE_SAMPLES):
+        super().__init__(bb)
         self.NOISE_SAMPLES = NOISE_SAMPLES
 
     def carlini_binary_rand_robust(self, model, ds, ds_label, p, noise_samples=100, stddev=0.025):
@@ -30,16 +32,11 @@ class Original_lblonly(Attack):
                 score = np.mean(np.array(list(map(lambda x: 1 if x == label else 0, noise_values))))
                 scores.append(score)
             else:  # Miss classification
-                print("miss classified")
+                # print("miss classified")
                 scores.append(0)
             index += 1
 
         return np.array(scores)
-
-    def trainRFClassifier(self, x, y):
-        rf = RandomForestClassifier()
-        rf.fit(x, y)
-        return rf
 
     def train_shadow_model(self):
         """
@@ -47,8 +44,8 @@ class Original_lblonly(Attack):
         to imitate the black-box model.
         :return:
         """
-        source_model = self.trainRFClassifier(self.noise_train_set, self.noise_train_label)
-        pred_tr_labels = source_model.predict(self.noise_train_set)
+        source_model = self.bb.train_model(self.noise_train_set.values, self.noise_train_label.values)
+        pred_tr_labels = source_model.predict(self.noise_train_set.values)
         tr_report = classification_report(self.noise_train_label, pred_tr_labels)
         print("Train report")
         print(tr_report)
@@ -136,10 +133,13 @@ class Original_lblonly(Attack):
         acc_test_t, _, _, _, report = self.get_max_accuracy(self.bb_data_label, self.bb_data_scores, thresholds=[t])
         print(report)
         print("Threshold choosed {}".format(t))
+        write_report = open("report_N_SAMPLES{}.txt".format(self.NOISE_SAMPLES), "w")
+        write_report.write(report)
 
 
 if __name__ == "__main__":
-    NOISE_SAMPLES = 100
-    NOISE_SAMPLES = int(sys.argv[1]) if len(sys.argv)> 1 else NOISE_SAMPLES
-    att = Original_lblonly(NOISE_SAMPLES)
+    NOISE_SAMPLES = 1
+    bb = RandomForestBlackBox()
+    # NOISE_SAMPLES = int(sys.argv[1]) if len(sys.argv)> 1 else NOISE_SAMPLES
+    att = Original_lblonly(bb, NOISE_SAMPLES)
     att.start_attack()

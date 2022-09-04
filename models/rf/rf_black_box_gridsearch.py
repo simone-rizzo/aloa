@@ -23,7 +23,7 @@ param_grid = {
 rf = RandomForestClassifier()
 # Instantiate the grid search model
 grid_search = GridSearchCV(estimator=rf, param_grid=param_grid, cv=3, n_jobs=12, verbose=2)
-grid_search.fit(train_set.values, train_label.values.ravel())
+grid_search.fit(train_set.values, train_label.values)
 print(grid_search.best_params_)
 y_pred_acc = grid_search.predict(test_set)
 report = classification_report(test_label, y_pred_acc)
