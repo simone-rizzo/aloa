@@ -166,7 +166,7 @@ class My_lblonly(Attack):
         print("Jointed:")
         report = classification_report(test_l, predicted)
         print(report)
-        write_report = open("mtlblonly_report_N_SAMPLES{}.txt".format(self.NOISE_SAMPLES), "w")
+        write_report = open("mtlblonly_report_{}_{}.txt".format(self.N_SHADOW_MODELS, self.NOISE_SAMPLES), "w")
         write_report.write(report)
 
 

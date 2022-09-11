@@ -1,6 +1,6 @@
 import sys
 
-from core.my_lblonly import My_lblonly
+from core.confidence_attack import ConfidenceAttack
 
 sys.path.append("..") # Adds higher directory to python modules path.
 
@@ -9,26 +9,25 @@ warnings.filterwarnings("ignore")
 
 from bboxes.rfbb import RandomForestBlackBox
 from core import *
-from core.original_lblonly import Original_lblonly
 from multiprocessing import Process
 
-# noise_samples_list = [1, 10, 50, 100, 200, 500, 1000, 5000]
-noise_samples_list = [1, 10]
+noise_samples_list = [1, 10, 50, 100, 200, 500, 1000]
+n_shadow_models = [1, 2, 4, 8, 16, 32]
 
 bb = RandomForestBlackBox()
 result = []
 
 
-def worker(noise_samples):
-    # att = Original_lblonly(bb, noise_samples)
-    att = My_lblonly(bb, 8, noise_samples)
+def worker(noise_models, noise_samples):
+    att = ConfidenceAttack(bb, noise_models)
+    # att = My_lblonly(bb, noise_models, noise_samples)
     att.start_attack()
 
 
 if __name__ == "__main__":
     processes = []
-    for nise_num in noise_samples_list:
-        process = Process(target=worker, args=(nise_num,))
+    for n_shadow in n_shadow_models:
+        process = Process(target=worker, args=(n_shadow, None))
         processes.append(process)
         process.start()
 

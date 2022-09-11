@@ -4,23 +4,29 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score, roc_curve
 import numpy as np
 from tqdm import tqdm
+from bboxes.nnbb import NeuralNetworkBlackBox
 
 from bboxes.rfbb import RandomForestBlackBox
 from core.attack import Attack
 from sklearn.metrics import roc_curve, accuracy_score, precision_score, classification_report
-
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 class Original_lblonly(Attack):
-    def __init__(self, bb, NOISE_SAMPLES):
+    def __init__(self, bb, NOISE_SAMPLES, is_nn=False):
         super().__init__(bb)
         self.NOISE_SAMPLES = NOISE_SAMPLES
+        self.is_nn = is_nn
 
-    def carlini_binary_rand_robust(self, model, ds, ds_label, p, noise_samples=100, stddev=0.025):
+    def carlini_binary_rand_robust(self, model, ds, ds_label, p, noise_samples=100, stddev=0.025, scaler=None):
         index = 0
         scores = []
         for row in tqdm(ds):
             label = ds_label[index]
-            y = model.predict([row])[0]
+            if self.is_nn and scaler:
+                input_scaled, _ = self.normalize(input, scaler, False)
+                y = model.predict(input_scaled, verbose=0)
+            else:
+                y = model.predict([row])[0]
             if y == label:
                 noise = np.random.binomial(1, p, (noise_samples, len(row[6:])))
                 x_sampled = np.tile(np.copy(row), (noise_samples, 1))
@@ -139,7 +145,8 @@ class Original_lblonly(Attack):
 
 if __name__ == "__main__":
     NOISE_SAMPLES = 1
-    bb = RandomForestBlackBox()
+    # bb = RandomForestBlackBox()
+    bb = NeuralNetworkBlackBox()
     # NOISE_SAMPLES = int(sys.argv[1]) if len(sys.argv)> 1 else NOISE_SAMPLES
-    att = Original_lblonly(bb, NOISE_SAMPLES)
+    att = Original_lblonly(bb, NOISE_SAMPLES, True)
     att.start_attack()

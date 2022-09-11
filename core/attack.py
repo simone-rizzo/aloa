@@ -23,12 +23,12 @@ class Attack(metaclass=abc.ABCMeta):
         self.attack_workflow()
 
     def initialize_dataset(self):
-        self.noise_train_set = pd.read_csv("../data/adult_noise_shadow_labelled")
+        self.noise_train_set = pd.read_csv("data/adult_noise_shadow_labelled")
         self.noise_train_label = self.noise_train_set.pop("class")
-        self.train_set = pd.read_csv("../data/adult_original_train_set.csv")
-        self.train_label = pd.read_csv("../data/adult_original_train_label.csv")
-        self.test_set = pd.read_csv("../data/adult_original_test_set.csv")
-        self.test_label = pd.read_csv("../data/adult_original_test_label.csv")
+        self.train_set = pd.read_csv("data/adult_original_train_set.csv")
+        self.train_label = pd.read_csv("data/adult_original_train_label.csv")
+        self.test_set = pd.read_csv("data/adult_original_test_set.csv")
+        self.test_label = pd.read_csv("data/adult_original_test_label.csv")
 
     def split_noise_dataset(self):
         self.noise_train_set, self.noise_test_set, self.noise_train_label, self.noise_test_label = train_test_split(

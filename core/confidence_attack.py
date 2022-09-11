@@ -1,4 +1,7 @@
+import os
 import sys
+file_dir = os.path.dirname("..")
+sys.path.append(file_dir)
 from math import ceil
 from multiprocessing import Process
 import numpy as np
@@ -8,8 +11,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn import tree
 from sklearn.metrics import classification_report
-
 from bboxes.nnbb import NeuralNetworkBlackBox
+
 from bboxes.rfbb import RandomForestBlackBox
 from core.attack import Attack
 
@@ -32,12 +35,12 @@ class ConfidenceAttack(Attack):
             self.noise_train_set, scaler = self.normalize(self.noise_train_set, dataFrame=True)
             self.noise_test_set, _ = self.normalize(self.noise_test_set, scaler, dataFrame=True)
 
-        self.tr_chunk_size = ceil(self.noise_train_set.shape[0] / N_SHADOW_MODELS)  # chunk for the train set.
-        self.ts_chunk_size = ceil(self.noise_test_set.shape[0] / N_SHADOW_MODELS)  # chunk for the test set.
+        self.tr_chunk_size = ceil(self.noise_train_set.shape[0] / self.N_SHADOW_MODELS)  # chunk for the train set.
+        self.ts_chunk_size = ceil(self.noise_test_set.shape[0] / self.N_SHADOW_MODELS)  # chunk for the test set.
         self.attack_dataset = []
 
         # For each shadow model
-        for m in range(N_SHADOW_MODELS):
+        for m in range(self.N_SHADOW_MODELS):
             # We take it's chunk of training data and test data
             tr = self.noise_train_set.values[m * self.tr_chunk_size:(m * self.tr_chunk_size) + self.tr_chunk_size]
             tr_l = self.noise_train_label.values[m * self.tr_chunk_size:(m * self.tr_chunk_size) + self.tr_chunk_size]
@@ -175,7 +178,7 @@ class ConfidenceAttack(Attack):
 
 
 if __name__ == "__main__":
-    N_SHADOW_MODELS = 8
+    N_SHADOW_MODELS = 16
     # bb = RandomForestBlackBox()
     bb = NeuralNetworkBlackBox()
     att = ConfidenceAttack(bb, N_SHADOW_MODELS, True)

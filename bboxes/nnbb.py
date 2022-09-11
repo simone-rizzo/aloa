@@ -11,7 +11,7 @@ class NeuralNetworkBlackBox(SklearnClassifierWrapper):
         if model:
             self.model = model
         else:
-            self.model = keras.models.load_model("../models/nn/nn_blackbox.h5")
+            self.model = keras.models.load_model("models/nn/nn_blackbox.h5")
 
     def model(self):
         return self.model()
@@ -35,10 +35,10 @@ class NeuralNetworkBlackBox(SklearnClassifierWrapper):
         x = layers.Dense(256, activation="tanh")(x)
         # x = layers.Dropout(0.1)(x)
         output = layers.Dense(2, activation="softmax")(x)
-        opt = tf.optimizers.Adam(learning_rate=0.001)
+        opt = tf.optimizers.Adam(learning_rate=0.005)
         model = keras.Model(inputs=inputs, outputs=output, name="nn_bb_model")
         model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
-        model.fit(tr, tr_l, epochs=30, batch_size=16)
+        model.fit(tr, tr_l, epochs=400, batch_size=16)
         return NeuralNetworkBlackBox(model)
 
 
