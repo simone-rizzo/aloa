@@ -1,3 +1,4 @@
+from tabnanny import verbose
 from keras import layers
 from tensorflow import keras
 from bboxes.bb_wrapper import SklearnClassifierWrapper
@@ -17,12 +18,12 @@ class NeuralNetworkBlackBox(SklearnClassifierWrapper):
         return self.model()
 
     def predict(self, x):
-        out = self.model.predict(x)
+        out = self.model.predict(x, verbose=False)
         out = np.argmax(out, axis=1)
         return out
 
     def predict_proba(self, x):
-        return self.model.predict(x)
+        return self.model.predict(x, verbose=False)
 
     def train_model(self, tr, tr_l):
         """

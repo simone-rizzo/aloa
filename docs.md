@@ -89,4 +89,4 @@ generating noised examples.
 | Conf vector | 0.52 | 0.76 | 0.62 |
 | My lblonly | 0. | 0. | 0. |
 | My lblonly w label | 0. | 0. | 0. |
-| Original lblonly | 0. | 0. | 0. |
+| Original lblonly | 0.52 | 0.73 | 0.61 |

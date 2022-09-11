@@ -1,4 +1,7 @@
+import os
 import sys
+file_dir = os.path.dirname("..")
+sys.path.append(file_dir)
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score, roc_curve
@@ -16,6 +19,7 @@ class Original_lblonly(Attack):
         super().__init__(bb)
         self.NOISE_SAMPLES = NOISE_SAMPLES
         self.is_nn = is_nn
+        self.scaler = None
 
     def carlini_binary_rand_robust(self, model, ds, ds_label, p, noise_samples=100, stddev=0.025, scaler=None):
         index = 0
@@ -23,8 +27,8 @@ class Original_lblonly(Attack):
         for row in tqdm(ds):
             label = ds_label[index]
             if self.is_nn and scaler:
-                input_scaled, _ = self.normalize(input, scaler, False)
-                y = model.predict(input_scaled, verbose=0)
+                input_scaled, _ = self.normalize(np.array([row]), scaler, False)
+                y = model.predict(input_scaled)
             else:
                 y = model.predict([row])[0]
             if y == label:
@@ -34,7 +38,11 @@ class Original_lblonly(Attack):
                                     where=noise.astype(bool)).astype(np.int32)
                 noise = stddev * np.random.randn(noise_samples, row[:6].shape[-1])
                 x_noisy = np.concatenate([x_sampled[:, :6] + noise, x_noisy], axis=1)
-                noise_values = model.predict(x_noisy)
+                if self.is_nn:
+                     x_noisy, _ = self.normalize(x_noisy, scaler, False)
+                     noise_values = model.predict(x_noisy)
+                else:
+                    noise_values = model.predict(x_noisy)
                 score = np.mean(np.array(list(map(lambda x: 1 if x == label else 0, noise_values))))
                 scores.append(score)
             else:  # Miss classification
@@ -50,8 +58,12 @@ class Original_lblonly(Attack):
         to imitate the black-box model.
         :return:
         """
-        source_model = self.bb.train_model(self.noise_train_set.values, self.noise_train_label.values)
-        pred_tr_labels = source_model.predict(self.noise_train_set.values)
+        if self.is_nn:
+            # Here we normalize the training set and the test set
+            self.noise_train_set_scaled, self.scaler = self.normalize(self.noise_train_set, dataFrame=True)
+            self.noise_test_set_scaled, _ = self.normalize(self.noise_test_set, self.scaler, dataFrame=True)
+        source_model = self.bb.train_model(self.noise_train_set_scaled.values, self.noise_train_label.values)
+        pred_tr_labels = source_model.predict(self.noise_train_set_scaled.values)
         tr_report = classification_report(self.noise_train_label, pred_tr_labels)
         print("Train report")
         print(tr_report)
@@ -111,15 +123,15 @@ class Original_lblonly(Attack):
     def perturb_datasets(self):
         # Shadow data
         tr_scores = self.carlini_binary_rand_robust(self.shadow_model, self.noise_train_set.values, self.noise_train_label.values,
-                                                    noise_samples=self.NOISE_SAMPLES, p=0.6)
+                                                    noise_samples=self.NOISE_SAMPLES, p=0.6, scaler=self.scaler)
         ts_scores = self.carlini_binary_rand_robust(self.shadow_model, self.noise_test_set.values, self.noise_test_label.values,
-                                                    noise_samples=self.NOISE_SAMPLES, p=0.6)
+                                                    noise_samples=self.NOISE_SAMPLES, p=0.6, scaler=self.scaler)
 
         # Blackbox data
         target_tr_scores = self.carlini_binary_rand_robust(self.bb, self.train_set.values, self.train_label.values,
-                                                           noise_samples=self.NOISE_SAMPLES, p=0.6)
+                                                           noise_samples=self.NOISE_SAMPLES, p=0.6, scaler=self.scaler)
         target_ts_scores = self.carlini_binary_rand_robust(self.bb, self.test_set.values, self.test_label.values,
-                                                           noise_samples=self.NOISE_SAMPLES, p=0.6)
+                                                           noise_samples=self.NOISE_SAMPLES, p=0.6, scaler=self.scaler)
         # We merge the scores for the shadow perturbed data and we assign (1-0 in out label)
         self.noise_data_label = np.concatenate([np.ones(tr_scores.shape[0]), np.zeros(ts_scores.shape[0])], axis=0)
         self.noise_data_scores = np.concatenate([tr_scores, ts_scores], axis=0)
@@ -130,6 +142,7 @@ class Original_lblonly(Attack):
         self.bb_data_scores = np.concatenate([target_tr_scores, target_ts_scores], axis=0)
 
     def train_test_attackmodel(self):
+        # Undersampling for 50-50 balanced test set.
         undersample = RandomUnderSampler(sampling_strategy="majority")
         self.bb_data_scores, self.bb_data_label = undersample.fit_resample(self.bb_data_scores.reshape(-1, 1), self.bb_data_label)
         self.bb_data_scores = np.ndarray.flatten(self.bb_data_scores)
@@ -139,12 +152,12 @@ class Original_lblonly(Attack):
         acc_test_t, _, _, _, report = self.get_max_accuracy(self.bb_data_label, self.bb_data_scores, thresholds=[t])
         print(report)
         print("Threshold choosed {}".format(t))
-        write_report = open("report_N_SAMPLES{}.txt".format(self.NOISE_SAMPLES), "w")
+        write_report = open("original_lblonly_nn.txt".format(self.NOISE_SAMPLES), "w")
         write_report.write(report)
 
 
 if __name__ == "__main__":
-    NOISE_SAMPLES = 1
+    NOISE_SAMPLES = 100
     # bb = RandomForestBlackBox()
     bb = NeuralNetworkBlackBox()
     # NOISE_SAMPLES = int(sys.argv[1]) if len(sys.argv)> 1 else NOISE_SAMPLES

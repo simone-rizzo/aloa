@@ -55,4 +55,4 @@ class Attack(metaclass=abc.ABCMeta):
         if dataFrame:
             return pd.DataFrame(np.concatenate([normalized_arr, binary_vals], axis=1)), scaler
         else:
-            np.concatenate([normalized_arr, binary_vals], axis=1), scaler
+            return np.concatenate([normalized_arr, binary_vals], axis=1), scaler
