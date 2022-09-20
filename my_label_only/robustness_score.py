@@ -63,7 +63,7 @@ def robustness_score(model, dataset: pd.DataFrame, n):
     return scores
 
 
-def robustness_score_label(model, dataset: pd.DataFrame, label, n):
+def robustness_score_label(model, dataset: pd.DataFrame, label, n, scaler=None):
     """
     Compute the robustness score for each row inside the dataset with the true label passed
     as parameter and in case of miss classification we set the score to 0.
@@ -80,7 +80,11 @@ def robustness_score_label(model, dataset: pd.DataFrame, label, n):
     for row in tqdm(dataset):
         variations = []
         y_true = label[index]
-        y_predicted = model.predict(np.array([row]))[0]
+        if scaler:
+            input_scaled, _ = normalize(np.array([row]), scaler, False)
+            y = model.predict(input_scaled)
+        else:
+            y_predicted = model.predict(np.array([row]))[0]
         # y_predicted = np.argmax(y_predicted) if len(y_predicted) > 1 else y_predicted
         if y_true == y_predicted:
             for i in range(n):
@@ -90,9 +94,7 @@ def robustness_score_label(model, dataset: pd.DataFrame, label, n):
                 variations.append(perturbed_row)
             variations = np.array(variations)
             output = model.predict(variations)  # we pass the variations inside the model
-            # output = np.argmax(output, axis=1) if output.shape[1] > 1 else output
             score = np.mean(np.array(list(map(lambda x: 1 if x == y_true else 0, output))))
-            # print(score)
             scores.append(score)
         else:
             scores.append(0)

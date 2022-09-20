@@ -1,4 +1,8 @@
 import sys
+import os
+import sys
+file_dir = os.path.dirname("..")
+sys.path.append(file_dir)
 from math import ceil
 import numpy as np
 from imblearn.under_sampling import RandomUnderSampler
@@ -9,14 +13,44 @@ from sklearn.ensemble import RandomForestClassifier
 from bboxes.rfbb import RandomForestBlackBox
 from core.attack import Attack
 import pandas as pd
-from my_label_only.robustness_score import robustness_score, robustness_score_label
+from bboxes.nnbb import NeuralNetworkBlackBox
+import math
 
+def bernoulli_noise(bin_values, p):
+    """
+
+    :param bin_values: index of the column in which we have binary values.
+    :param p: porbability of changing the value.
+    :return:
+    """
+    for i in range(len(bin_values)):
+        r = np.random.uniform(0, 1)
+        if r <= p:
+            bin_values[i] = math.fabs(bin_values[i]-1)
+    return bin_values
+
+def neighborhood_noise(values, pd):
+    """
+
+    :param values: continuous values to be perturbed
+    :param pd: percentage deviation (min, max) is the percentage of the value to add or subtrack.
+    :return:
+    """
+    for i in range(len(values)):
+        r = np.random.uniform(pd[0], pd[1])
+        r = round(r, 2)
+        if np.random.randint(2, size=1)[0] == 1:  # 50% of probability to be added or subtracted
+            r *= -1
+        values[i] += round(values[i] * r, 3)
+    return values
 
 class My_lblonly(Attack):
-    def __init__(self, bb, N_SHADOW_MODELS, NOISE_SAMPLES):
+    def __init__(self, bb, N_SHADOW_MODELS, NOISE_SAMPLES, is_nn):
         super().__init__(bb)
         self.N_SHADOW_MODELS = N_SHADOW_MODELS
         self.NOISE_SAMPLES = NOISE_SAMPLES
+        self.is_nn = is_nn
+        self.scaler = None
 
     def attack_workflow(self):
         self.train_shadow_models()
@@ -61,8 +95,55 @@ class My_lblonly(Attack):
             write_report.write(report)
             # We merge all the attack models
             self.attack_models.append(mdl)
-
+    
+    def robustness_score_label(self, model, dataset: pd.DataFrame, label, n, scaler=None):
+        """
+        Compute the robustness score for each row inside the dataset with the true label passed
+        as parameter and in case of miss classification we set the score to 0.
+        :param model: model to get the labels.
+        :param dataset:
+        :param n: number of perturbations.
+        :return: score of robustness is a value 0<rob_score<1
+        """
+        fb = 0.60  # probability of flipping one bit.
+        con_vals = 6  # number of continues values before the bit ones.
+        percentage_deviation = (0.1, 0.50)  # min max of the percentage of the value to add or subtrack.
+        scores = []
+        index = 0
+        for row in tqdm(dataset):
+            variations = []
+            y_true = label[index]
+            if self.is_nn and scaler:
+                input_scaled, _ = self.normalize(np.array([row]), scaler, False)
+                y_predicted = model.predict(input_scaled)
+            else:
+                y_predicted = model.predict(np.array([row]))[0]
+            # y_predicted = np.argmax(y_predicted) if len(y_predicted) > 1 else y_predicted
+            if y_true == y_predicted:
+                for i in range(n):
+                    perturbed_row = row.copy()
+                    perturbed_row[:con_vals] = neighborhood_noise(perturbed_row[:con_vals], percentage_deviation)
+                    perturbed_row[con_vals:] = bernoulli_noise(perturbed_row[con_vals:], fb)
+                    variations.append(perturbed_row)
+                variations = np.array(variations)
+                if self.is_nn:
+                    x_noisy, _ = self.normalize(variations, scaler, False)
+                    output = model.predict(x_noisy)
+                else:
+                    output = model.predict(x_noisy)
+                score = np.mean(np.array(list(map(lambda x: 1 if x == y_true else 0, output))))
+                scores.append(score)
+            else:
+                scores.append(0)
+            index += 1
+        return scores
+        
     def train_shadow_models(self):
+        if self.is_nn:
+            # Here we normalize the training set and the test set
+            self.noise_train_set, self.scaler = self.normalize(self.noise_train_set, dataFrame=True)
+            self.noise_test_set, _ = self.normalize(self.noise_test_set, self.scaler, dataFrame=True)
+        
         tr_chunk_size = ceil(self.noise_train_set.shape[0] / self.N_SHADOW_MODELS)  # chunk for the train set.
         ts_chunk_size = ceil(self.noise_test_set.shape[0] / self.N_SHADOW_MODELS)  # chunk for the test set.
         self.attack_dataset = []
@@ -85,7 +166,7 @@ class My_lblonly(Attack):
             # Report on training set
             pred_tr_labels = shadow.predict(tr)
             # pred_tr_robustness = robustness_score(shadow, tr, self.NOISE_SAMPLES) # old implementation
-            pred_tr_robustness = robustness_score_label(shadow, tr,tr_l, self.NOISE_SAMPLES) # old implementation
+            pred_tr_robustness = self.robustness_score_label(shadow, tr,tr_l, self.NOISE_SAMPLES, scaler=self.scaler) # old implementation
 
             df_in = pd.DataFrame(pred_tr_robustness)
             df_in["class_label"] = pred_tr_labels
@@ -98,24 +179,29 @@ class My_lblonly(Attack):
             # Test
             pred_labels = shadow.predict(ts)
             # pred_ts_robustness = robustness_score(shadow, ts, self.NOISE_SAMPLES) # old implementation
-            pred_ts_robustness = robustness_score_label(shadow, ts, ts_l, self.NOISE_SAMPLES) # old implementation
+            pred_ts_robustness = self.robustness_score_label(shadow, ts, ts_l, self.NOISE_SAMPLES, scaler=self.scaler) # old implementation
             df_out = pd.DataFrame(pred_ts_robustness)
             df_out["class_label"] = pred_labels
             df_out["target_label"] = 0
             report = classification_report(ts_l, pred_labels)
             print(report)
-            write_report = open("report_shadow_test{}.txt".format(m), "w")
+            write_report = open("nn_report_shadow_test{}.txt".format(m), "w")
             write_report.write(report)
             # We merge the dataframes with IN/OUT target and we save it.
             df_final = pd.concat([df_in, df_out])
             # Save the dataset
-            df_final.to_csv("shadow_df{}.csv".format(m))
+            # df_final.to_csv("shadow_df{}.csv".format(m))
             self.attack_dataset.append(df_final)
 
     def test_attack(self):
+        if self.is_nn:
+            # Here we normalize the training set and the test set
+            self.train_set, self.scaler = self.normalize(self.train_set, dataFrame=True)
+            self.test_set, _ = self.normalize(self.test_set, self.scaler, dataFrame=True)
+        
         # Getting predict proba from the black box on tr and assign 1 as target_label
         # trainset_predict_proba = robustness_score(self.bb, self.train_set.values, self.NOISE_SAMPLES) # old one
-        trainset_predict_proba = robustness_score_label(self.bb, self.train_set.values, self.train_label.values, self.NOISE_SAMPLES) # old one
+        trainset_predict_proba = self.robustness_score_label(self.bb, self.train_set.values, self.train_label.values, self.NOISE_SAMPLES, scaler=self.scaler) # old one
 
         class_labels = self.bb.predict(self.train_set.values)
         df_in = pd.DataFrame(trainset_predict_proba)
@@ -124,7 +210,7 @@ class My_lblonly(Attack):
 
         # Getting predict proba from the black box on ts and assign 0 as target_label
         # testset_predict_proba = robustness_score(self.bb, self.test_set.values, self.NOISE_SAMPLES) #old one
-        testset_predict_proba = robustness_score_label(self.bb, self.test_set.values, self.test_label.values, self.NOISE_SAMPLES) #old one
+        testset_predict_proba = self.robustness_score_label(self.bb, self.test_set.values, self.test_label.values, self.NOISE_SAMPLES) #old one
         class_labels2 = self.bb.predict(self.test_set.values)
         df_out = pd.DataFrame(testset_predict_proba)
         df_out['target_label'] = 0
@@ -171,9 +257,10 @@ class My_lblonly(Attack):
 
 
 if __name__ == "__main__":
-    NOISE_SAMPLES = 1
-    bb = RandomForestBlackBox()
+    NOISE_SAMPLES = 100
+    N_SHADOW_MODELS = 16
+    # bb = RandomForestBlackBox()
+    bb = NeuralNetworkBlackBox()
     NOISE_SAMPLES = int(sys.argv[1]) if len(sys.argv) > 1 else NOISE_SAMPLES
-    N_SHADOW_MODELS = 8
-    att = My_lblonly(bb, N_SHADOW_MODELS, 100)
+    att = My_lblonly(bb, N_SHADOW_MODELS, NOISE_SAMPLES, is_nn=True)
     att.start_attack()
