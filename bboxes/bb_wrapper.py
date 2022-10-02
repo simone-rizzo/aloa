@@ -1,6 +1,5 @@
 import abc
-from bbox import AbstractBBox
-import numpy as np
+from bboxes.bbox import AbstractBBox
 
 
 class SklearnClassifierWrapper(AbstractBBox, metaclass=abc.ABCMeta):

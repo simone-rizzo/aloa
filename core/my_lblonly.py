@@ -16,6 +16,7 @@ import pandas as pd
 from bboxes.nnbb import NeuralNetworkBlackBox
 import math
 
+
 def bernoulli_noise(bin_values, p):
     """
 
@@ -28,6 +29,7 @@ def bernoulli_noise(bin_values, p):
         if r <= p:
             bin_values[i] = math.fabs(bin_values[i]-1)
     return bin_values
+
 
 def neighborhood_noise(values, pd):
     """
@@ -44,6 +46,7 @@ def neighborhood_noise(values, pd):
         values[i] += round(values[i] * r, 3)
     return values
 
+
 class My_lblonly(Attack):
     def __init__(self, bb, N_SHADOW_MODELS, NOISE_SAMPLES, is_nn):
         super().__init__(bb)
@@ -53,9 +56,14 @@ class My_lblonly(Attack):
         self.scaler = None
 
     def attack_workflow(self):
-        """self.train_shadow_models()
+        """
+        Questo era quello che c'era prima
+        self.train_shadow_models()
         self.train_attack_models()
-        self.test_attack()"""
+        self.test_attack()
+        Sotto di questo è tutto un debbugging. va rimosso
+        """
+        # Da qua in giù rimuovi.
         if self.is_nn:
             # Here we normalize the training set and the test set
             self.noise_train_set, self.scaler = self.normalize(self.noise_train_set, dataFrame=True)

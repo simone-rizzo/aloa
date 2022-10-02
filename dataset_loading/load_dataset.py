@@ -37,8 +37,8 @@ shadow_set.to_csv('./data/adult_shadow.csv', index=False)
 train_label = train_set.pop('class')
 # Splittig the original dataset train set with the tipical hold out percentage 80-20.
 train_set, test_set, train_label, test_label = train_test_split(train_set, train_label, stratify=train_label,
-                                                                test_size=0.30, random_state=45)
-train_set.to_csv('./data/adult_original_train_set_s45.csv', index=False)
-test_set.to_csv('./data/adult_original_test_set_s45.csv', index=False)
-train_label.to_csv('./data/adult_original_train_label_s45.csv', index=False)
-test_label.to_csv('./data/adult_original_test_label_s45.csv', index=False)
+                                                                test_size=0.20, random_state=0)
+train_set.to_csv('./data/adult_original_train_set_s.csv', index=False)
+test_set.to_csv('./data/adult_original_test_set_s.csv', index=False)
+train_label.to_csv('./data/adult_original_train_label_s.csv', index=False)
+test_label.to_csv('./data/adult_original_test_label_s.csv', index=False)

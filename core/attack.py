@@ -23,8 +23,13 @@ class Attack(metaclass=abc.ABCMeta):
         self.attack_workflow()
 
     def initialize_dataset(self):
-        self.noise_train_set = pd.read_csv("data/adult_noise_shadow_labelled")
-        self.noise_train_label = self.noise_train_set.pop("class")
+        # The model assign the label for the noise dataset.
+        noise_data = pd.read_csv("data/adult_noise_shadow.csv")
+        predictions = self.bb.predict(noise_data.values)
+        noise_data['class'] = predictions
+        self.noise_train_label = self.noise_data.pop("class") #prima effettuo il pop
+        self.noise_train_set = noise_data # successivamente assegno
+
         self.train_set = pd.read_csv("data/adult_original_train_set.csv")
         self.train_label = pd.read_csv("data/adult_original_train_label.csv")
         self.test_set = pd.read_csv("data/adult_original_test_set.csv")
