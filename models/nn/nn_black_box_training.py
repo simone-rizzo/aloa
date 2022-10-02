@@ -64,23 +64,19 @@ model = get_nn_model(train_set.shape[1])
 # Compilation of the model and training.
 opt = tf.optimizers.Adam(learning_rate=0.005)
 model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
-model.fit(train_set, train_label, epochs=400, batch_size=32)
+model.fit(train_set, train_label, epochs=1, batch_size=32)
 
 # Performances on training set
 train_prediction = model.predict(train_set)
 train_prediction = np.argmax(train_prediction, axis=1)
 report = classification_report(train_label, train_prediction)
 print(report)
-# write_report = open("measures_nn_black_box_training.txt", "w")
-# write_report.write(report)
 
 # Performances on test set
 test_prediction = model.predict(test_set)
 test_prediction = np.argmax(test_prediction, axis=1)
 report = classification_report(test_label, test_prediction)
 print(report)
-# write_report = open("measures_nn_black_box_test.txt", "w")
-# write_report.write(report)
 
 # Saving the model
-model.save('nn_blackbox.h5')
+model.save('nn_blackbox_regolarized.h5')
