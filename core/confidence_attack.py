@@ -24,10 +24,9 @@ which uses the convidence vector probability.
 
 class ConfidenceAttack(Attack):
     def __init__(self, bb, N_SHADOW_MODELS, is_nn=False):
-        super().__init__(bb)
+        super().__init__(bb, is_nn)
         self.N_SHADOW_MODELS = N_SHADOW_MODELS
         self.shadow_models = []
-        self.is_nn = is_nn
 
     def train_shadow_models(self):
         if self.is_nn:
@@ -164,6 +163,7 @@ class ConfidenceAttack(Attack):
             # Filter the dataset for data of the same class_label
             test = df_final[df_final['class_labels'] == c]
             test.pop("class_labels")
+
             # Obtaining the target
             test_label = test.pop("target_label")
             pred = att_c.predict(test.values)

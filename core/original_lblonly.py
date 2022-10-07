@@ -8,17 +8,16 @@ from sklearn.metrics import classification_report, accuracy_score, roc_curve
 import numpy as np
 from tqdm import tqdm
 from bboxes.nnbb import NeuralNetworkBlackBox
-
 from bboxes.rfbb import RandomForestBlackBox
 from core.attack import Attack
 from sklearn.metrics import roc_curve, accuracy_score, precision_score, classification_report
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
+
 class Original_lblonly(Attack):
     def __init__(self, bb, NOISE_SAMPLES, is_nn=False):
-        super().__init__(bb)
+        super().__init__(bb, is_nn)
         self.NOISE_SAMPLES = NOISE_SAMPLES
-        self.is_nn = is_nn
         self.scaler = None
 
     def carlini_binary_rand_robust(self, model, ds, ds_label, p, noise_samples=100, stddev=0.025, scaler=None):
@@ -26,11 +25,7 @@ class Original_lblonly(Attack):
         scores = []
         for row in tqdm(ds):
             label = ds_label[index]
-            if self.is_nn and scaler:
-                input_scaled, _ = self.normalize(np.array([row]), scaler, False)
-                y = model.predict(input_scaled)
-            else:
-                y = model.predict([row])[0]
+            y = model.predict(np.array([row]))[0]
             if y == label:
                 noise = np.random.binomial(1, p, (noise_samples, len(row[6:])))
                 x_sampled = np.tile(np.copy(row), (noise_samples, 1))
@@ -38,11 +33,7 @@ class Original_lblonly(Attack):
                                     where=noise.astype(bool)).astype(np.int32)
                 noise = stddev * np.random.randn(noise_samples, row[:6].shape[-1])
                 x_noisy = np.concatenate([x_sampled[:, :6] + noise, x_noisy], axis=1)
-                if self.is_nn:
-                     x_noisy, _ = self.normalize(x_noisy, scaler, False)
-                     noise_values = model.predict(x_noisy)
-                else:
-                    noise_values = model.predict(x_noisy)
+                noise_values = model.predict(x_noisy)
                 score = np.mean(np.array(list(map(lambda x: 1 if x == label else 0, noise_values))))
                 scores.append(score)
             else:  # Miss classification
@@ -58,12 +49,8 @@ class Original_lblonly(Attack):
         to imitate the black-box model.
         :return:
         """
-        if self.is_nn:
-            # Here we normalize the training set and the test set
-            self.noise_train_set_scaled, self.scaler = self.normalize(self.noise_train_set, dataFrame=True)
-            self.noise_test_set_scaled, _ = self.normalize(self.noise_test_set, self.scaler, dataFrame=True)
-        source_model = self.bb.train_model(self.noise_train_set_scaled.values, self.noise_train_label.values)
-        pred_tr_labels = source_model.predict(self.noise_train_set_scaled.values)
+        source_model = self.bb.train_model(self.noise_train_set.values, self.noise_train_label.values)
+        pred_tr_labels = source_model.predict(self.noise_train_set.values)
         tr_report = classification_report(self.noise_train_label, pred_tr_labels)
         print("Train report")
         print(tr_report)

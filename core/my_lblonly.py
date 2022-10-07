@@ -49,10 +49,9 @@ def neighborhood_noise(values, pd):
 
 class My_lblonly(Attack):
     def __init__(self, bb, N_SHADOW_MODELS, NOISE_SAMPLES, is_nn):
-        super().__init__(bb)
+        super().__init__(bb, is_nn)
         self.N_SHADOW_MODELS = N_SHADOW_MODELS
         self.NOISE_SAMPLES = NOISE_SAMPLES
-        self.is_nn = is_nn
         self.scaler = None
 
     def attack_workflow(self):
@@ -310,7 +309,7 @@ class My_lblonly(Attack):
 
 if __name__ == "__main__":
     NOISE_SAMPLES = 100
-    N_SHADOW_MODELS = 1
+    N_SHADOW_MODELS = 16
     # bb = RandomForestBlackBox()
     bb = NeuralNetworkBlackBox()
     NOISE_SAMPLES = int(sys.argv[1]) if len(sys.argv) > 1 else NOISE_SAMPLES
