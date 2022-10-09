@@ -141,11 +141,11 @@ N_SHADOW_MODELS = 8
 # Target model is the blackbox model that we want to perform the attack.
 target_model = keras.models.load_model("../models/nn/nn_blackbox.h5")
 
-target_train_set = pd.read_csv("../data/adult_original_train_set.csv")
-target_train_label = pd.read_csv("../data/adult_original_train_label.csv")
+target_train_set = pd.read_csv("../data/original_train_set.csv")
+target_train_label = pd.read_csv("../data/original_train_label.csv")
 
-target_test_set = pd.read_csv("../data/adult_original_test_set.csv")
-target_test_label = pd.read_csv("../data/adult_original_test_label.csv")
+target_test_set = pd.read_csv("../data/original_test_set.csv")
+target_test_label = pd.read_csv("../data/original_test_label.csv")
 
 target_train_set_scaled, scaler = normalize(target_train_set)
 target_test_set_scaled, _ = normalize(target_test_set, scaler)

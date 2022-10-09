@@ -3,10 +3,10 @@ from sklearn.metrics import classification_report
 import pandas as pd
 import pickle
 
-train_set = pd.read_csv("../../data/adult_original_train_set_s45.csv")
-test_set = pd.read_csv("../../data/adult_original_test_set_s45.csv")
-train_label = pd.read_csv("../../data/adult_original_train_label_s45.csv")
-test_label = pd.read_csv("../../data/adult_original_test_label_s45.csv")
+train_set = pd.read_csv("../../data/bank/original.csv")
+test_set = pd.read_csv("../../data/bank/adult_original_test_set_s45.csv")
+train_label = pd.read_csv("../../data/bank/adult_original_train_label_s45.csv")
+test_label = pd.read_csv("../../data/bank/adult_original_test_label_s45.csv")
 
 
 dt = tree.DecisionTreeClassifier(

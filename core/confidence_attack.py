@@ -23,8 +23,8 @@ which uses the convidence vector probability.
 
 
 class ConfidenceAttack(Attack):
-    def __init__(self, bb, N_SHADOW_MODELS, is_nn=False):
-        super().__init__(bb, is_nn)
+    def __init__(self, bb, N_SHADOW_MODELS, is_nn=False, db_name='adult'):
+        super().__init__(bb, is_nn, database_name=db_name)
         self.N_SHADOW_MODELS = N_SHADOW_MODELS
         self.shadow_models = []
 
@@ -46,7 +46,7 @@ class ConfidenceAttack(Attack):
             tr, tr_l = undersample.fit_resample(tr, tr_l)
 
             # we train the model.
-            shadow = self.bb.train_model(tr, np.array(tr_l), epochs=400)
+            shadow = self.bb.train_model(tr, np.array(tr_l), epochs=250)
 
             # Report on training set
             pred_tr_labels = shadow.predict(tr)
@@ -168,8 +168,9 @@ class ConfidenceAttack(Attack):
 
 
 if __name__ == "__main__":
-    N_SHADOW_MODELS = 4
+    N_SHADOW_MODELS = 1
     # bb = RandomForestBlackBox()
-    bb = NeuralNetworkBlackBox()
-    att = ConfidenceAttack(bb, N_SHADOW_MODELS, True)
+    ds_name = 'bank'
+    bb = NeuralNetworkBlackBox(db_name=ds_name)
+    att = ConfidenceAttack(bb, N_SHADOW_MODELS, True, db_name=ds_name)
     att.start_attack()

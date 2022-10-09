@@ -5,10 +5,10 @@ from sklearn.metrics import classification_report
 import pickle
 import json
 
-train_set = pd.read_csv("../../data/adult_original_train_set.csv")
-test_set = pd.read_csv("../../data/adult_original_test_set.csv")
-train_label = pd.read_csv("../../data/adult_original_train_label.csv")
-test_label = pd.read_csv("../../data/adult_original_test_label.csv")
+train_set = pd.read_csv("../../data/original_train_set.csv")
+test_set = pd.read_csv("../../data/original_test_set.csv")
+train_label = pd.read_csv("../../data/original_train_label.csv")
+test_label = pd.read_csv("../../data/original_test_label.csv")
 
 # {'bootstrap': False, 'criterion': 'gini', 'max_depth': 100, 'max_features': 'auto', 'min_samples_leaf': 10, 'min_samples_split': 5, 'n_estimators': 350}
 rf = RandomForestClassifier(bootstrap=False, class_weight='balanced',

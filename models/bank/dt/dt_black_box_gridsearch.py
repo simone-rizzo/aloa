@@ -5,10 +5,10 @@ from sklearn.metrics import classification_report
 import pickle
 
 
-train_set = pd.read_csv("./data/adult_original_train_set.csv")
-test_set = pd.read_csv("./data/adult_original_test_set.csv")
-train_label = pd.read_csv("./data/adult_original_train_label.csv")
-test_label = pd.read_csv("./data/adult_original_test_label.csv")
+train_set = pd.read_csv("./data/original_train_set.csv")
+test_set = pd.read_csv("./data/original_test_set.csv")
+train_label = pd.read_csv("./data/original_train_label.csv")
+test_label = pd.read_csv("./data/original_test_label.csv")
 
 tree_para = {'criterion': ['gini', 'entropy'], 'max_depth': [20, 40, 80, 100, 300, 400, 500],
              'min_samples_split': [5, 10, 15, 25, 30, 50], 'min_samples_leaf': [3, 5, 15, 20, 40, 50],

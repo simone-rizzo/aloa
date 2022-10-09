@@ -45,10 +45,10 @@ def load_nn_bb(filepath):
     return keras.models.load_model(filepath)
 
 
-train_set = pd.read_csv("../../data/adult_original_train_set.csv")
-test_set = pd.read_csv("../../data/adult_original_test_set.csv")
-train_label = pd.read_csv("../../data/adult_original_train_label.csv")
-test_label = pd.read_csv("../../data/adult_original_test_label.csv")
+train_set = pd.read_csv("../../data/original_train_set.csv")
+test_set = pd.read_csv("../../data/original_test_set.csv")
+train_label = pd.read_csv("../../data/original_train_label.csv")
+test_label = pd.read_csv("../../data/original_test_label.csv")
 
 # Here we normalize the training set and the test set
 train_set, scaler = normalize(train_set)

@@ -10,9 +10,10 @@ from bboxes.rfbb import RandomForestBlackBox
 
 class Attack(metaclass=abc.ABCMeta):
 
-    def __init__(self, bbmodel, is_nn):
+    def __init__(self, bbmodel, is_nn, database_name):
         self.bb = bbmodel
         self.is_nn = is_nn
+        self.db_name = database_name
 
     @abc.abstractmethod
     def attack_workflow(self):
@@ -26,15 +27,15 @@ class Attack(metaclass=abc.ABCMeta):
     def initialize_dataset(self):
         # The model assign the label for the noise dataset.
         # if nn we have to scale the dataset first.
-        noise_data = pd.read_csv("../data/adult_noise_shadow.csv")
+        noise_data = pd.read_csv("../data/{}/noise_shadow.csv".format(self.db_name))
         predictions = self.bb.predict(noise_data.values)
         self.noise_train_label = pd.DataFrame(predictions) #prima effettuo il pop
         self.noise_train_set = noise_data # successivamente assegno
 
-        self.train_set = pd.read_csv("../data/adult_original_train_set.csv")
-        self.train_label = pd.read_csv("../data/adult_original_train_label.csv")
-        self.test_set = pd.read_csv("../data/adult_original_test_set.csv")
-        self.test_label = pd.read_csv("../data/adult_original_test_label.csv")
+        self.train_set = pd.read_csv("../data/{}/original_train_set.csv".format(self.db_name))
+        self.train_label = pd.read_csv("../data/{}/original_train_label.csv".format(self.db_name))
+        self.test_set = pd.read_csv("../data/{}/original_test_set.csv".format(self.db_name))
+        self.test_label = pd.read_csv("../data/{}/original_test_label.csv".format(self.db_name))
 
     def split_noise_dataset(self):
         self.noise_train_set, self.noise_test_set, self.noise_train_label, self.noise_test_label = train_test_split(

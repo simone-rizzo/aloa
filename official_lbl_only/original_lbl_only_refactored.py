@@ -104,10 +104,10 @@ NOISE_SAMPLES = int(sys.argv[1]) if len(sys.argv) > 1 else NOISE_SAMPLES
 
 # Target model is the blackbox model that we want to perform the attack.
 target_model = RandomForestBlackBox()
-target_train_set = pd.read_csv("../data/adult_original_train_set.csv")
-target_train_label = pd.read_csv("../data/adult_original_train_label.csv")
-target_test_set = pd.read_csv("../data/adult_original_test_set.csv")
-target_test_label = pd.read_csv("../data/adult_original_test_label.csv")
+target_train_set = pd.read_csv("../data/original_train_set.csv")
+target_train_label = pd.read_csv("../data/original_train_label.csv")
+target_test_set = pd.read_csv("../data/original_test_set.csv")
+target_test_label = pd.read_csv("../data/original_test_label.csv")
 
 
 # Source model is model trained with similar data of the target one with the same architecture.

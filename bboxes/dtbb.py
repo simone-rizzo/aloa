@@ -24,8 +24,8 @@ import pandas as pd
 from sklearn.metrics import classification_report
 bb = RandomForestBlackBox()
 
-test_set = pd.read_csv("../data/adult_original_test_set.csv", index_col=0)
-test_label = pd.read_csv("../data/adult_original_test_label.csv", index_col=0)
+test_set = pd.read_csv("../data/original_test_set.csv", index_col=0)
+test_label = pd.read_csv("../data/original_test_label.csv", index_col=0)
 predictions1 = bb.predict(test_set)
 report = classification_report(test_label, predictions1)
 print(report)"""

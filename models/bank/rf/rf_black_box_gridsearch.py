@@ -5,10 +5,10 @@ from sklearn.metrics import classification_report
 import pickle
 import json
 
-train_set = pd.read_csv("../../data/adult_original_train_set.csv", index_col=0)
-test_set = pd.read_csv("../../data/adult_original_test_set.csv", index_col=0)
-train_label = pd.read_csv("../../data/adult_original_train_label.csv", index_col=0)
-test_label = pd.read_csv("../../data/adult_original_test_label.csv", index_col=0)
+train_set = pd.read_csv("../../data/original_train_set.csv", index_col=0)
+test_set = pd.read_csv("../../data/original_test_set.csv", index_col=0)
+train_label = pd.read_csv("../../data/original_train_label.csv", index_col=0)
+test_label = pd.read_csv("../../data/original_test_label.csv", index_col=0)
 
 param_grid = {
                     'bootstrap': [True, False],
