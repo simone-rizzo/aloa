@@ -29,11 +29,6 @@ class ConfidenceAttack(Attack):
         self.shadow_models = []
 
     def train_shadow_models(self):
-        if self.is_nn:
-            # Here we normalize the training set and the test set
-            self.noise_train_set, scaler = self.normalize(self.noise_train_set, dataFrame=True)
-            self.noise_test_set, _ = self.normalize(self.noise_test_set, scaler, dataFrame=True)
-
         self.tr_chunk_size = ceil(self.noise_train_set.shape[0] / self.N_SHADOW_MODELS)  # chunk for the train set.
         self.ts_chunk_size = ceil(self.noise_test_set.shape[0] / self.N_SHADOW_MODELS)  # chunk for the test set.
         self.attack_dataset = []
@@ -51,7 +46,7 @@ class ConfidenceAttack(Attack):
             tr, tr_l = undersample.fit_resample(tr, tr_l)
 
             # we train the model.
-            shadow = self.bb.train_model(tr, np.array(tr_l))
+            shadow = self.bb.train_model(tr, np.array(tr_l), epochs=400)
 
             # Report on training set
             pred_tr_labels = shadow.predict(tr)
@@ -122,11 +117,6 @@ class ConfidenceAttack(Attack):
             self.attack_models.append(mdl)
 
     def test_attack(self):
-        if self.is_nn:
-            # Here we normalize the training set and the test set
-            self.train_set, scaler = self.normalize(self.train_set, dataFrame=True)
-            self.test_set, _ = self.normalize(self.test_set, scaler, dataFrame=True)
-
         # Getting predict proba from the black box on tr and assign 1 as target_label
         trainset_predict_proba = self.bb.predict_proba(self.train_set.values)
         class_labels = np.argmax(trainset_predict_proba, axis=1)
@@ -178,7 +168,7 @@ class ConfidenceAttack(Attack):
 
 
 if __name__ == "__main__":
-    N_SHADOW_MODELS = 16
+    N_SHADOW_MODELS = 4
     # bb = RandomForestBlackBox()
     bb = NeuralNetworkBlackBox()
     att = ConfidenceAttack(bb, N_SHADOW_MODELS, True)

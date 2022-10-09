@@ -20,7 +20,7 @@ class Original_lblonly(Attack):
         self.NOISE_SAMPLES = NOISE_SAMPLES
         self.scaler = None
 
-    def carlini_binary_rand_robust(self, model, ds, ds_label, p, noise_samples=100, stddev=0.025, scaler=None):
+    def carlini_binary_rand_robust(self, model, ds, ds_label, p, noise_samples=100, stddev=0.030, scaler=None):
         index = 0
         scores = []
         for row in tqdm(ds):
@@ -49,7 +49,7 @@ class Original_lblonly(Attack):
         to imitate the black-box model.
         :return:
         """
-        source_model = self.bb.train_model(self.noise_train_set.values, self.noise_train_label.values)
+        source_model = self.bb.train_model(self.noise_train_set.values, self.noise_train_label.values, epochs=400)
         pred_tr_labels = source_model.predict(self.noise_train_set.values)
         tr_report = classification_report(self.noise_train_label, pred_tr_labels)
         print("Train report")
@@ -108,24 +108,29 @@ class Original_lblonly(Attack):
                                                                                 self.noise_train_label)
 
     def perturb_datasets(self):
+        # We merge the scores for the shadow perturbed data and we assign (1-0 in out label)
+        self.noise_data_label = np.concatenate([np.ones(self.noise_test_set.shape[0]), np.zeros(self.noise_test_set.shape[0])], axis=0)
+        indexes = np.random.choice(self.noise_train_set.shape[0], self.noise_test_set.shape[0], replace=False)
         # Shadow data
-        tr_scores = self.carlini_binary_rand_robust(self.shadow_model, self.noise_train_set.values, self.noise_train_label.values,
+        tr_scores = self.carlini_binary_rand_robust(self.shadow_model, self.noise_train_set.values[indexes], self.noise_train_label.values[indexes],
                                                     noise_samples=self.NOISE_SAMPLES, p=0.6, scaler=self.scaler)
         ts_scores = self.carlini_binary_rand_robust(self.shadow_model, self.noise_test_set.values, self.noise_test_label.values,
                                                     noise_samples=self.NOISE_SAMPLES, p=0.6, scaler=self.scaler)
+        # We merge the test and train balanced datasets.
+        self.noise_data_scores = np.concatenate([tr_scores, ts_scores], axis=0)
 
+
+        # We merge the scores for the blackbox perturbed data and we assign (1-0 in out label)
+        self.bb_data_label = np.concatenate([np.ones(self.test_set.shape[0]), np.zeros(self.test_set.shape[0])],
+                                            axis=0)
+        indexes = np.random.choice(self.train_set.shape[0], self.test_set.shape[0], replace=False)
         # Blackbox data
-        target_tr_scores = self.carlini_binary_rand_robust(self.bb, self.train_set.values, self.train_label.values,
+        target_tr_scores = self.carlini_binary_rand_robust(self.bb, self.train_set.values[indexes], self.train_label.values[indexes],
                                                            noise_samples=self.NOISE_SAMPLES, p=0.6, scaler=self.scaler)
         target_ts_scores = self.carlini_binary_rand_robust(self.bb, self.test_set.values, self.test_label.values,
                                                            noise_samples=self.NOISE_SAMPLES, p=0.6, scaler=self.scaler)
-        # We merge the scores for the shadow perturbed data and we assign (1-0 in out label)
-        self.noise_data_label = np.concatenate([np.ones(tr_scores.shape[0]), np.zeros(ts_scores.shape[0])], axis=0)
-        self.noise_data_scores = np.concatenate([tr_scores, ts_scores], axis=0)
 
-        # We merge the scores for the blackbox perturbed data and we assign (1-0 in out label)
-        self.bb_data_label = np.concatenate([np.ones(target_tr_scores.shape[0]), np.zeros(target_ts_scores.shape[0])],
-                                            axis=0)
+
         self.bb_data_scores = np.concatenate([target_tr_scores, target_ts_scores], axis=0)
 
     def train_test_attackmodel(self):
@@ -144,7 +149,7 @@ class Original_lblonly(Attack):
 
 
 if __name__ == "__main__":
-    NOISE_SAMPLES = 100
+    NOISE_SAMPLES = 1000
     # bb = RandomForestBlackBox()
     bb = NeuralNetworkBlackBox()
     # NOISE_SAMPLES = int(sys.argv[1]) if len(sys.argv)> 1 else NOISE_SAMPLES
