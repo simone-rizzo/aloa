@@ -7,7 +7,7 @@ from bboxes.rfbb import RandomForestBlackBox
 # bb = DecisionTreeBlackBox()
 bb = RandomForestBlackBox()
 
-noise_data = pd.read_csv("data/adult_noise_shadow.csv")
+noise_data = pd.read_csv("data/noise_shadow.csv")
 print(noise_data.shape)
 predictions = bb.predict(noise_data.values)
 noise_data['class'] = predictions

@@ -44,10 +44,12 @@ def get_nn_model(input_dim):
     :return:
     """
     inputs = keras.Input(shape=(input_dim,))
-    x = layers.Dense(100, activation="relu")(inputs)
+    x = layers.Dense(300, activation="relu")(inputs)
     # x = layers.Dropout(0.1)(x)
-    x = layers.Dense(100, activation="relu")(x)
-    x = layers.Dense(100, activation="relu")(x)
+    x = layers.Dense(300, activation="relu")(x)
+    x = layers.Dense(300, activation="relu")(x)
+    x = layers.Dense(300, activation="relu")(x)
+    x = layers.Dense(300, activation="relu")(x)
     # x = layers.Dropout(0.1)(x)
     # output = layers.Dense(1, activation="sigmoid")(x)
     output = layers.Dense(2, activation="softmax")(x)
@@ -82,7 +84,7 @@ tr, tr_l = undersample.fit_resample(train_set, train_label.values)
 # We let the model overfit
 opt = tf.optimizers.Adam()
 model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
-history = model.fit(train_set, train_label, validation_split=0.2, epochs=250, batch_size=512)
+history = model.fit(train_set, train_label, epochs=250, batch_size=512)
 
 # Performances on training set
 train_prediction = model.predict(train_set)

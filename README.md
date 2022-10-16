@@ -102,3 +102,12 @@ to detect which part has the greater impact.
 - si shadow, no model, our perturb
 - si shadow, si model, original perturb
 - si shadow, si model, our perturb
+
+# Bank dataset
+## MIA attacks on Neural Network balanced
+| Attack type     | Precision | Recall | F1 score | 
+| ----------- | ----------- | ----------- | ----------- |
+| Conf vector(2) | 0.53 | 0.66 | 0.58 |
+| My lblonly(16) | 0. | 0. | 0. |
+| My lblonly w label(16) | 0. | 0. | 0. |
+| Original lblonly | 0.60 | 0.83 | 0.69 |

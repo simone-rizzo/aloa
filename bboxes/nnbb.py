@@ -44,8 +44,7 @@ class NeuralNetworkBlackBox(SklearnClassifierWrapper):
         else:
             self.db_name = db_name
             self.model = keras.models.load_model("../models/{}/nn/nn_blackbox.h5".format(db_name))
-            self.scaler = pickle.load(open("C:/Users/Simone/Documents/mia/models/bank/nn/nn_scaler.sav", 'rb'))
-            # self.scaler = pickle.load(open("../models/{}/nn/nn_scaler.sav".format(db_name), 'rb'))
+            self.scaler = pickle.load(open("../models/{}/nn/nn_scaler.sav".format(db_name), 'rb'))
 
     def model(self):
         return self.model()
@@ -67,14 +66,16 @@ class NeuralNetworkBlackBox(SklearnClassifierWrapper):
         """
         tr, _ = normalize(tr, self.scaler, False, db_name=self.db_name)  # scaling layer # first we scale the values.
         inputs = keras.Input(shape=(tr.shape[1],))
-        x = layers.Dense(100, activation="relu")(inputs)
-        x = layers.Dense(100, activation="relu")(x)
-        x = layers.Dense(100, activation="relu")(x)
+        x = layers.Dense(300, activation="relu")(inputs)
+        x = layers.Dense(300, activation="relu")(x)
+        x = layers.Dense(300, activation="relu")(x)
+        x = layers.Dense(300, activation="relu")(x)
+        x = layers.Dense(300, activation="relu")(x)
         output = layers.Dense(2, activation="softmax")(x)
         opt = tf.optimizers.Adam()
         model = keras.Model(inputs=inputs, outputs=output, name="nn_bb_model")
         model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
-        model.fit(tr, tr_l, epochs=epochs, batch_size=32)
+        model.fit(tr, tr_l, epochs=epochs, batch_size=250)
         return NeuralNetworkBlackBox(model, self.scaler, self.db_name)
 
 

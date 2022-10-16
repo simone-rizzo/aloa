@@ -10,7 +10,7 @@ from imblearn.under_sampling import RandomUnderSampler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn import tree
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, precision_score, recall_score
 from bboxes.nnbb import NeuralNetworkBlackBox
 
 from bboxes.rfbb import RandomForestBlackBox
@@ -83,7 +83,26 @@ class ConfidenceAttack(Attack):
         attack_dataset = pd.concat(self.attack_dataset)
         classes = list(attack_dataset['class_label'].unique())
         self.attack_models = []
-        for c in classes:
+        attack_dataset.pop('class_label')
+        tr_label = attack_dataset.pop('target_label')
+        #Let's undersample
+        undersample = RandomUnderSampler(sampling_strategy="majority")
+        tr, tr_label = undersample.fit_resample(attack_dataset, tr_label)
+
+        train_set, test_set, train_label, test_label = train_test_split(tr, tr_label, stratify=tr_label,
+                                                                        test_size=0.20, random_state=1)
+        mdl = RandomForestClassifier()
+        mdl.fit(train_set.values, train_label.values)
+        pred = mdl.predict(train_set.values)
+        report = classification_report(train_label, pred)
+        print(report)
+
+        # Prediction and report of the performances.
+        pred = mdl.predict(test_set.values)
+        report = classification_report(test_label, pred)
+        print(report)
+        self.attack_model = mdl
+        """for c in classes:
             print("Class:{}".format(c))
             tr = attack_dataset[attack_dataset['class_label'] == c]
             tr.pop('class_label')
@@ -107,6 +126,9 @@ class ConfidenceAttack(Attack):
             # We train the attacker model.
             mdl = RandomForestClassifier()
             mdl.fit(train_set.values, train_label.values)
+            pred = mdl.predict(train_set.values)
+            report = classification_report(train_label, pred)
+            print(report)
 
             # Prediction and report of the performances.
             pred = mdl.predict(test_set.values)
@@ -114,7 +136,7 @@ class ConfidenceAttack(Attack):
             print(report)
 
             # We merge all the attack models
-            self.attack_models.append(mdl)
+            self.attack_models.append(mdl)"""
 
     def test_attack(self):
         # Getting predict proba from the black box on tr and assign 1 as target_label
@@ -146,7 +168,12 @@ class ConfidenceAttack(Attack):
         test_l = []
         predicted = []
 
-        for c, i in enumerate(classes):
+        att_c = self.attack_model
+        df_new.pop("class_labels")
+        out = att_c.predict(df_new.values)
+        report = classification_report(ts_l, out)
+        print(report)
+        """for c, i in enumerate(classes):
             print("Results for class: {}".format(c))
             # Obtain the correct attack model for the class c.
             att_c = self.attack_models[i]
@@ -157,6 +184,7 @@ class ConfidenceAttack(Attack):
             # Obtaining the target
             test_label = test.pop("target_label")
             pred = att_c.predict(test.values)
+            # pred = list(map(lambda x: 0 if max(x) < att_c else 1, test.values))
             report = classification_report(test_label, pred)
             print(report)
             test_l.extend(test_label.values)
@@ -164,11 +192,21 @@ class ConfidenceAttack(Attack):
 
         print("Jointed:")
         report = classification_report(test_l, predicted)
-        print(report)
+        print(report)"""
+
+    def th_model(self, data, label):
+        thsld = np.linspace(0, 1)
+        results = []
+        for t in thsld:
+            th_data = list(map(lambda x: 0 if max(x) <= t else 1, data))
+            p = recall_score(label, th_data)
+            results.append(p)
+            # print(classification_report(label, th_data))
+        return thsld[np.argmax(results)]
 
 
 if __name__ == "__main__":
-    N_SHADOW_MODELS = 1
+    N_SHADOW_MODELS = 2
     # bb = RandomForestBlackBox()
     ds_name = 'bank'
     bb = NeuralNetworkBlackBox(db_name=ds_name)

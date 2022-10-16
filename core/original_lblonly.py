@@ -15,27 +15,35 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 
 class Original_lblonly(Attack):
-    def __init__(self, bb, NOISE_SAMPLES, is_nn=False):
-        super().__init__(bb, is_nn)
+    def __init__(self, bb, NOISE_SAMPLES, is_nn=False, db_name='adult'):
+        super().__init__(bb, is_nn, database_name=db_name)
         self.NOISE_SAMPLES = NOISE_SAMPLES
         self.scaler = None
 
-    def carlini_binary_rand_robust(self, model, ds, ds_label, p, noise_samples=100, stddev=0.030, scaler=None):
+    def carlini_binary_rand_robust(self, model, ds, ds_label, p, noise_samples=100, stddev=0.040, scaler=None):
         index = 0
         scores = []
         for row in tqdm(ds):
             label = ds_label[index]
             y = model.predict(np.array([row]))[0]
             if y == label:
-                noise = np.random.binomial(1, p, (noise_samples, len(row[6:])))
-                x_sampled = np.tile(np.copy(row), (noise_samples, 1))
-                x_noisy = np.invert(row[6:].astype(bool), out=np.copy(x_sampled[:, 6:]),
-                                    where=noise.astype(bool)).astype(np.int32)
-                noise = stddev * np.random.randn(noise_samples, row[:6].shape[-1])
-                x_noisy = np.concatenate([x_sampled[:, :6] + noise, x_noisy], axis=1)
-                noise_values = model.predict(x_noisy)
-                score = np.mean(np.array(list(map(lambda x: 1 if x == label else 0, noise_values))))
-                scores.append(score)
+                if self.db_name == 'adult':
+                    noise = np.random.binomial(1, p, (noise_samples, len(row[6:])))
+                    x_sampled = np.tile(np.copy(row), (noise_samples, 1))
+                    x_noisy = np.invert(row[6:].astype(bool), out=np.copy(x_sampled[:, 6:]),
+                                        where=noise.astype(bool)).astype(np.int32)
+                    noise = stddev * np.random.randn(noise_samples, row[:6].shape[-1])
+                    x_noisy = np.concatenate([x_sampled[:, :6] + noise, x_noisy], axis=1)
+                    noise_values = model.predict(x_noisy)
+                    score = np.mean(np.array(list(map(lambda x: 1 if x == label else 0, noise_values))))
+                    scores.append(score)
+                elif self.db_name == 'bank':
+                    x_sampled = np.tile(np.copy(row), (noise_samples, 1))
+                    noise = stddev * np.random.randn(noise_samples, row.shape[-1])
+                    x_noisy = x_sampled + noise
+                    noise_values = model.predict(x_noisy)
+                    score = np.mean(np.array(list(map(lambda x: 1 if x == label else 0, noise_values))))
+                    scores.append(score)
             else:  # Miss classification
                 # print("miss classified")
                 scores.append(0)
@@ -49,7 +57,7 @@ class Original_lblonly(Attack):
         to imitate the black-box model.
         :return:
         """
-        source_model = self.bb.train_model(self.noise_train_set.values, self.noise_train_label.values, epochs=400)
+        source_model = self.bb.train_model(self.noise_train_set.values, self.noise_train_label.values, epochs=250)
         pred_tr_labels = source_model.predict(self.noise_train_set.values)
         tr_report = classification_report(self.noise_train_label, pred_tr_labels)
         print("Train report")
@@ -144,14 +152,15 @@ class Original_lblonly(Attack):
         acc_test_t, _, _, _, report = self.get_max_accuracy(self.bb_data_label, self.bb_data_scores, thresholds=[t])
         print(report)
         print("Threshold choosed {}".format(t))
-        write_report = open("original_lblonly_nn.txt".format(self.NOISE_SAMPLES), "w")
+        write_report = open("bank_original_lblonly_nn.txt".format(self.NOISE_SAMPLES), "w")
         write_report.write(report)
 
 
 if __name__ == "__main__":
     NOISE_SAMPLES = 1000
     # bb = RandomForestBlackBox()
-    bb = NeuralNetworkBlackBox()
+    ds_name = 'bank'
+    bb = NeuralNetworkBlackBox(db_name=ds_name)
     # NOISE_SAMPLES = int(sys.argv[1]) if len(sys.argv)> 1 else NOISE_SAMPLES
-    att = Original_lblonly(bb, NOISE_SAMPLES, True)
+    att = Original_lblonly(bb, NOISE_SAMPLES, True, db_name=ds_name)
     att.start_attack()
