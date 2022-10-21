@@ -84,7 +84,7 @@ tr, tr_l = undersample.fit_resample(train_set, train_label.values)
 # We let the model overfit
 opt = tf.optimizers.Adam()
 model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
-history = model.fit(train_set, train_label, epochs=250, batch_size=512)
+history = model.fit(train_set, train_label, validation_split=0.2, epochs=250, batch_size=512)
 
 # Performances on training set
 train_prediction = model.predict(train_set)

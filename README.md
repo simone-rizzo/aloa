@@ -94,20 +94,20 @@ What are we doing is to compute all the possible triple in order
 to detect which part has the greater impact.
 
 ### Configurations:
-- no shadow, no model, original perturb
-- no shadow, no model, our perturbation
-- no shadow, si model, original perturb
-- no shadow, si model, our perturbation
-- si shadow, no model, original perturb
-- si shadow, no model, our perturb
-- si shadow, si model, original perturb
-- si shadow, si model, our perturb
+- 000 no shadow, no model, original perturb: 60, 87, 71
+- 001 no shadow, no model, our perturbation: 58, 97, 73 
+- 010 no shadow, si model, original perturb: 59, 84, 69
+- 011 no shadow, si model, our perturbation: 59, 56, 59
+- 100 si shadow, no model, original perturb
+- 101 si shadow, no model, our perturb: 
+- 110 si shadow, si model, original perturb: 
+- 111 si shadow, si model, our perturb
 
 # Bank dataset
 ## MIA attacks on Neural Network balanced
 | Attack type     | Precision | Recall | F1 score | 
 | ----------- | ----------- | ----------- | ----------- |
-| Conf vector(2) | 0.53 | 0.66 | 0.58 |
+| Conf vector(2) | 0.53 | 0.64 | 0.58 |
 | My lblonly(16) | 0. | 0. | 0. |
 | My lblonly w label(16) | 0. | 0. | 0. |
-| Original lblonly | 0.60 | 0.83 | 0.69 |
+| Original lblonly | 0.60 | 0.87 | 0.71 |
