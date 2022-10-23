@@ -1,8 +1,9 @@
 import os
 import sys
-
+from sklearn.utils import shuffle
 from core.my_lblonly import neighborhood_noise, bernoulli_noise
-
+import pandas as pd
+from math import ceil
 file_dir = os.path.dirname("..")
 sys.path.append(file_dir)
 from imblearn.under_sampling import RandomUnderSampler
@@ -23,6 +24,7 @@ class Original_lblonly(Attack):
         self.NOISE_SAMPLES = NOISE_SAMPLES
         self.settings = settings
         self.scaler = None
+        self.N_SHADOW_MODELS = 4
 
     def robustness_score_label(self, model, dataset, label, n, scaler=None):
         """
@@ -91,6 +93,62 @@ class Original_lblonly(Attack):
 
         return np.array(scores)
 
+    def train_shadow_models(self):
+        tr_chunk_size = ceil(self.noise_train_set.shape[0] / self.N_SHADOW_MODELS)  # chunk for the train set.
+        ts_chunk_size = ceil(self.noise_test_set.shape[0] / self.N_SHADOW_MODELS)  # chunk for the test set.
+        self.attack_dataset = []
+
+        # For each shadow model
+        for m in tqdm(range(self.N_SHADOW_MODELS)):
+            # We take it's chunk of training data and test data
+            tr = self.noise_train_set.values[m * tr_chunk_size:(m * tr_chunk_size) + tr_chunk_size]
+            tr_l = self.noise_train_label.values[m * tr_chunk_size:(m * tr_chunk_size) + tr_chunk_size]
+            ts = self.noise_test_set.values[m * ts_chunk_size:(m * ts_chunk_size) + ts_chunk_size]
+            ts_l = self.noise_test_label.values[m * ts_chunk_size:(m * ts_chunk_size) + ts_chunk_size]
+
+            # We perform undersampling
+            undersample = RandomUnderSampler(sampling_strategy="majority")
+            tr, tr_l = undersample.fit_resample(tr, tr_l)
+
+            # we train the model.
+            shadow = self.bb.train_model(tr, tr_l, epochs = 250 )
+
+            # Report on training set
+            pred_tr_labels = shadow.predict(tr)
+            indexes = np.random.choice(tr.shape[0], ts.shape[0], replace=False)
+            if self.settings[2] == 0:
+                pred_tr_robustness = self.carlini_binary_rand_robust(shadow, tr[indexes], tr_l[indexes], noise_samples=self.NOISE_SAMPLES, p=0.6)
+            else:
+                pred_tr_robustness = self.robustness_score_label(shadow, tr[indexes], tr_l[indexes], self.NOISE_SAMPLES, scaler=self.scaler) # old implementation
+
+            df_in = pd.DataFrame(pred_tr_robustness)
+            df_in["class_label"] = pred_tr_labels[indexes]
+            df_in["target_label"] = 1
+            report = classification_report(tr_l[indexes], pred_tr_labels[indexes])
+            print(report)
+            # df_in.to_csv("scores_tr{}.csv".format(m))
+            write_report = open("report_shadow_train{}.txt".format(m), "w")
+            write_report.write(report)
+
+            # Test
+            pred_labels = shadow.predict(ts)
+            if self.settings[0] == 0:
+                pred_ts_robustness = self.robustness_score_label(shadow, ts, ts_l, self.NOISE_SAMPLES, scaler=self.scaler) # old implementation
+            else:
+                pred_ts_robustness = self.carlini_binary_rand_robust(shadow, ts, ts_l, noise_samples=self.NOISE_SAMPLES, p=0.6)
+            df_out = pd.DataFrame(pred_ts_robustness)
+            df_out["class_label"] = pred_labels
+            df_out["target_label"] = 0
+            report = classification_report(ts_l, pred_labels)
+            print(report)
+            write_report = open("nn_report_shadow_test{}.txt".format(m), "w")
+            write_report.write(report)
+            # We merge the dataframes with IN/OUT target and we save it.
+            df_final = pd.concat([df_in, df_out])
+            # Save the dataset
+            # df_final.to_csv("shadow_df{}.csv".format(m))
+            self.attack_dataset.append(df_final)
+
     def train_shadow_model(self):
         """
         Here we train the shadow model on the adult_noise_shadow_labelled dataset, in order
@@ -110,7 +168,11 @@ class Original_lblonly(Attack):
 
     def attack_workflow(self):
         self.undersample_noise_training()
-        self.train_shadow_model()
+        if self.settings[0] == 0:
+            self.train_shadow_model()
+        else:
+            self.train_shadow_models()
+
         self.perturb_datasets()
         self.train_test_attackmodel()
 
@@ -154,28 +216,36 @@ class Original_lblonly(Attack):
         undersample = RandomUnderSampler(sampling_strategy="majority")
         self.noise_train_set, self.noise_train_label = undersample.fit_resample(self.noise_train_set,
                                                                                 self.noise_train_label)
+        self.noise_train_set, self.noise_train_label = shuffle(self.noise_train_set, self.noise_train_label)
+
 
     def perturb_datasets(self):
         # We merge the scores for the shadow perturbed data and we assign (1-0 in out label)
-        self.noise_data_label = np.concatenate([np.ones(self.noise_test_set.shape[0]), np.zeros(self.noise_test_set.shape[0])], axis=0)
-        indexes = np.random.choice(self.noise_train_set.shape[0], self.noise_test_set.shape[0], replace=False)
-        if self.settings[2] == 0:
-            print("Generating with paper noise")
-            # Shadow data
-            tr_scores = self.carlini_binary_rand_robust(self.shadow_model, self.noise_train_set.values[indexes], self.noise_train_label.values[indexes],
-                                                        noise_samples=self.NOISE_SAMPLES, p=0.6, scaler=self.scaler)
-            ts_scores = self.carlini_binary_rand_robust(self.shadow_model, self.noise_test_set.values, self.noise_test_label.values,
-                                                        noise_samples=self.NOISE_SAMPLES, p=0.6, scaler=self.scaler)
-        else:
-            print("Generating with our noise")
-            tr_scores = self.robustness_score_label(self.shadow_model, self.noise_train_set.values[indexes],
-                                                        self.noise_train_label.values[indexes],
-                                                        n=self.NOISE_SAMPLES)
-            ts_scores = self.robustness_score_label(self.shadow_model, self.noise_test_set.values,
-                                                        self.noise_test_label.values, n=self.NOISE_SAMPLES)
+        if self.settings[0] == 0:
+            self.noise_data_label = np.concatenate([np.ones(self.noise_test_set.shape[0]), np.zeros(self.noise_test_set.shape[0])], axis=0)
+            indexes = np.random.choice(self.noise_train_set.shape[0], self.noise_test_set.shape[0], replace=False)
+            if self.settings[2] == 0:
+                print("Generating with paper noise")
+                # Shadow data
+                tr_scores = self.carlini_binary_rand_robust(self.shadow_model, self.noise_train_set.values[indexes], self.noise_train_label.values[indexes],
+                                                            noise_samples=self.NOISE_SAMPLES, p=0.6, scaler=self.scaler)
+                ts_scores = self.carlini_binary_rand_robust(self.shadow_model, self.noise_test_set.values, self.noise_test_label.values,
+                                                            noise_samples=self.NOISE_SAMPLES, p=0.6, scaler=self.scaler)
+            else:
+                print("Generating with our noise")
+                tr_scores = self.robustness_score_label(self.shadow_model, self.noise_train_set.values[indexes],
+                                                            self.noise_train_label.values[indexes],
+                                                            n=self.NOISE_SAMPLES)
+                ts_scores = self.robustness_score_label(self.shadow_model, self.noise_test_set.values,
+                                                            self.noise_test_label.values, n=self.NOISE_SAMPLES)
 
-        # We merge the test and train balanced datasets.
-        self.noise_data_scores = np.concatenate([tr_scores, ts_scores], axis=0)
+            # We merge the test and train balanced datasets.
+            self.noise_data_scores = np.concatenate([tr_scores, ts_scores], axis=0)
+        else:
+            jointed_shadow_ds = pd.concat(self.attack_dataset)
+            undersample = RandomUnderSampler(sampling_strategy="majority")
+            self.noise_data_scores, self.noise_data_label = undersample.fit_resample(np.array(jointed_shadow_ds[0]).reshape(-1, 1),
+                                                                                    jointed_shadow_ds['target_label'])
 
 
         # We merge the scores for the blackbox perturbed data and we assign (1-0 in out label)
@@ -231,7 +301,7 @@ class Original_lblonly(Attack):
 if __name__ == "__main__":
     NOISE_SAMPLES = 1000
     # bb = RandomForestBlackBox()
-    ds_name = 'bank'
+    ds_name = 'adult'
     bb = NeuralNetworkBlackBox(db_name=ds_name)
     settings = [0, 1, 0] # first is shadow model or not, second train model or not, tird perturbation algorithm.
     # NOISE_SAMPLES = int(sys.argv[1]) if len(sys.argv)> 1 else NOISE_SAMPLES

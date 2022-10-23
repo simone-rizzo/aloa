@@ -98,10 +98,10 @@ to detect which part has the greater impact.
 - 001 no shadow, no model, our perturbation: 58, 97, 73 
 - 010 no shadow, si model, original perturb: 59, 84, 69
 - 011 no shadow, si model, our perturbation: 59, 56, 59
-- 100 si shadow, no model, original perturb
-- 101 si shadow, no model, our perturb: 
-- 110 si shadow, si model, original perturb: 
-- 111 si shadow, si model, our perturb
+- 100 si shadow, no model, original perturb: 60, 84, 70
+- 101 si shadow, no model, our perturb:58, 97, 73
+- 110 si shadow, si model, original perturb:59, 85, 70 
+- 111 si shadow, si model, our perturb: 59, 92, 72
 
 # Bank dataset
 ## MIA attacks on Neural Network balanced
