@@ -108,14 +108,16 @@ to detect which part has the greater impact.
 | Original lblonly | 0.60 | 0.87 | 0.71 |
 
 ### Configurations:
-- 000 no shadow, no model, original perturb: 59, 81, 69
-- 001 no shadow, no model, our perturbation: 58, 97, 73 
-- 010 no shadow, si model, original perturb: 59, 84, 70
-- 011 no shadow, si model, our perturbation: 59, 56, 57
-- 100 si shadow, no model, original perturb: 60, 84, 70
-- 101 si shadow, no model, our perturb:58, 97, 73
-- 110 si shadow, si model, original perturb:59, 85, 70 
-- 111 si shadow, si model, our perturb: 59, 92, 72
+| Shadow | Model | Our perturb | Precision | Recall | F1 score | 
+| ----------- | ----------- | ----------- | ----------- | ----------- | ----------- |
+| 0 | 0 | 0 | 0.59 | 0.81 | 0.69 |
+| 0 | 0 | 1 | 0.58 | 0.97 | 0.73 |
+| 0 | 1 | 0 | 0.58 | 0.84 | 0.70 |
+| 0 | 1 | 1 | 0.59 | 0.56 | 0.57 |
+| 1 | 0 | 0 | 0.60 | 0.84 | 0.70 |
+| 1 | 0 | 1 | 0.58 | 0.97 | 0.73 |
+| 1 | 1 | 0 | 0.59 | 0.85 | 0.70 |
+| 1 | 1 | 1 | 0.59 | 0.92 | 0.72 |
 
 # Synth dataset
 | Model type     | TR accuracy | Test accuracy | 
