@@ -58,7 +58,7 @@ generating noised examples.
 | DT | 0.88 | 0.83|
 | RF | 1.0 | 0.84 |
 | NN | 0.89 | 0.83 |
-| NN overfitted | 0.98 | 0.81 |
+| NN overfitted | 0.99 | 0.81 |
 
 ## MIA attacks on Random forest model
 | Attack type     | Precision | Recall | F1 score | 

@@ -208,7 +208,7 @@ class ConfidenceAttack(Attack):
 if __name__ == "__main__":
     N_SHADOW_MODELS = 2
     # bb = RandomForestBlackBox()
-    ds_name = 'synth'
+    ds_name = 'adult'
     bb = NeuralNetworkBlackBox(db_name=ds_name)
     att = ConfidenceAttack(bb, N_SHADOW_MODELS, True, db_name=ds_name)
     att.start_attack()

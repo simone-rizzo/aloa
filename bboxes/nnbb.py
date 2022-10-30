@@ -66,7 +66,7 @@ class NeuralNetworkBlackBox(SklearnClassifierWrapper):
         """
         tr, _ = normalize(tr, self.scaler, False, db_name=self.db_name)  # scaling layer # first we scale the values.
         inputs = keras.Input(shape=(tr.shape[1],))
-        if self.db_name == 'bank':
+        if self.db_name == 'bank' or self.db_name == 'adult':
             x = layers.Dense(300, activation="relu")(inputs)
             x = layers.Dense(300, activation="relu")(x)
             x = layers.Dense(300, activation="relu")(x)
