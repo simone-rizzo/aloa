@@ -116,3 +116,27 @@ to detect which part has the greater impact.
 - 101 si shadow, no model, our perturb:58, 97, 73
 - 110 si shadow, si model, original perturb:59, 85, 70 
 - 111 si shadow, si model, our perturb: 59, 92, 72
+
+# Synth dataset
+| Model type     | TR accuracy | Test accuracy | 
+| ----------- | ----------- | ----------- | 
+| NN overfitted | 1.00 | 0. | 
+## MIA attacks on Neural Network balanced
+| Attack type     | Precision | Recall | F1 score | 
+| ----------- | ----------- | ----------- | ----------- |
+| Conf vector(2) | 0.57 | 0.64 | 0.60 |
+| My lblonly | 0. | 0. | 0. |
+| My lblonly w label(4) | 0. | 0. | 0. |
+| Original lblonly | 0.54 | 1.00 | 0.70 |
+
+### Configurations:
+| Shadow | Model | Our perturb | Precision | Recall | F1 score | 
+| ----------- | ----------- | ----------- | ----------- | ----------- | ----------- |
+| 0 | 0 | 0 | 0.54 | 1.00 | 0.70 |
+| 0 | 0 | 1 | 0.55 | 1.00 | 0.71 |
+| 0 | 1 | 0 | 0.54 | 1.00 | 0.70 |
+| 0 | 1 | 1 | 0.54 | 0.86 | 0.66 |
+| 1 | 0 | 0 | 0.54 | 1.00 | 0.70 |
+| 1 | 0 | 1 | 0.55 | 1.00 | 0.71 |
+| 1 | 1 | 0 | 0.54 | 1.00 | 0.70 |
+| 1 | 1 | 1 | 0.60 | 0.40 | 0.48 |
