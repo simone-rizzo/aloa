@@ -24,7 +24,7 @@ def normalize(ds, scaler=None, dataframe=True, db_name='adult'):
             scaler.fit(continuos_val)
         normalized_arr = scaler.transform(continuos_val)
         return np.concatenate([normalized_arr, binary_vals], axis=1), scaler
-    elif db_name == 'bank':
+    elif db_name == 'bank' or db_name == 'synth':
         ds = ds.values if dataframe else ds
         if scaler is None:
             scaler = StandardScaler()
@@ -66,17 +66,30 @@ class NeuralNetworkBlackBox(SklearnClassifierWrapper):
         """
         tr, _ = normalize(tr, self.scaler, False, db_name=self.db_name)  # scaling layer # first we scale the values.
         inputs = keras.Input(shape=(tr.shape[1],))
-        x = layers.Dense(300, activation="relu")(inputs)
-        x = layers.Dense(300, activation="relu")(x)
-        x = layers.Dense(300, activation="relu")(x)
-        x = layers.Dense(300, activation="relu")(x)
-        x = layers.Dense(300, activation="relu")(x)
-        output = layers.Dense(2, activation="softmax")(x)
-        opt = tf.optimizers.Adam()
-        model = keras.Model(inputs=inputs, outputs=output, name="nn_bb_model")
-        model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
-        model.fit(tr, tr_l, epochs=epochs, batch_size=250)
-        return NeuralNetworkBlackBox(model, self.scaler, self.db_name)
+        if self.db_name == 'bank':
+            x = layers.Dense(300, activation="relu")(inputs)
+            x = layers.Dense(300, activation="relu")(x)
+            x = layers.Dense(300, activation="relu")(x)
+            x = layers.Dense(300, activation="relu")(x)
+            x = layers.Dense(300, activation="relu")(x)
+            output = layers.Dense(2, activation="softmax")(x)
+            opt = tf.optimizers.Adam()
+            model = keras.Model(inputs=inputs, outputs=output, name="nn_bb_model")
+            model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
+            model.fit(tr, tr_l, epochs=epochs, batch_size=250)
+            return NeuralNetworkBlackBox(model, self.scaler, self.db_name)
+        elif self.db_name == 'synth':
+            x = layers.Dense(300, activation="relu")(inputs)
+            x = layers.Dense(300, activation="relu")(x)
+            x = layers.Dense(300, activation="relu")(x)
+            x = layers.Dense(300, activation="relu")(x)
+            x = layers.Dense(300, activation="relu")(x)
+            output = layers.Dense(15, activation="softmax")(x)
+            opt = tf.optimizers.Adam()
+            model = keras.Model(inputs=inputs, outputs=output, name="nn_bb_model")
+            model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
+            model.fit(tr, tr_l, epochs=200, batch_size=1024)
+            return NeuralNetworkBlackBox(model, self.scaler, self.db_name)
 
 
 if __name__ == "__main__":

@@ -1,19 +1,19 @@
 import os
 import sys
-from sklearn.utils import shuffle
+file_dir = os.path.dirname("..")
+sys.path.append(file_dir)
+from core.attack import Attack
+from bboxes.nnbb import NeuralNetworkBlackBox
+from bboxes.rfbb import RandomForestBlackBox
 from core.my_lblonly import neighborhood_noise, bernoulli_noise
 import pandas as pd
 from math import ceil
-file_dir = os.path.dirname("..")
-sys.path.append(file_dir)
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score, roc_curve
 import numpy as np
 from tqdm import tqdm
-from bboxes.nnbb import NeuralNetworkBlackBox
-from bboxes.rfbb import RandomForestBlackBox
-from core.attack import Attack
+from sklearn.utils import shuffle
 from sklearn.metrics import roc_curve, accuracy_score, precision_score, classification_report
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
@@ -50,7 +50,7 @@ class Original_lblonly(Attack):
                     if self.db_name == 'adult':
                         perturbed_row[:con_vals] = neighborhood_noise(perturbed_row[:con_vals], percentage_deviation)
                         perturbed_row[con_vals:] = bernoulli_noise(perturbed_row[con_vals:], fb)
-                    elif self.db_name == 'bank':
+                    elif self.db_name == 'bank' or self.db_name == 'synth':
                         perturbed_row = neighborhood_noise(perturbed_row, percentage_deviation)
                     variations.append(perturbed_row)
                 variations = np.array(variations)
@@ -79,7 +79,7 @@ class Original_lblonly(Attack):
                     noise_values = model.predict(x_noisy)
                     score = np.mean(np.array(list(map(lambda x: 1 if x == label else 0, noise_values))))
                     scores.append(score)
-                elif self.db_name == 'bank':
+                elif self.db_name == 'bank' or self.db_name == 'synth':
                     x_sampled = np.tile(np.copy(row), (noise_samples, 1))
                     noise = stddev * np.random.randn(noise_samples, row.shape[-1])
                     x_noisy = x_sampled + noise
@@ -301,9 +301,10 @@ class Original_lblonly(Attack):
 if __name__ == "__main__":
     NOISE_SAMPLES = 1000
     # bb = RandomForestBlackBox()
-    ds_name = 'adult'
+    ds_name = 'synth'
     bb = NeuralNetworkBlackBox(db_name=ds_name)
-    settings = [0, 1, 0] # first is shadow model or not, second train model or not, tird perturbation algorithm.
+    settings = [1, 1, 1] # first is shadow model or not, second train model or not, third perturbation algorithm.
     # NOISE_SAMPLES = int(sys.argv[1]) if len(sys.argv)> 1 else NOISE_SAMPLES
     att = Original_lblonly(bb, NOISE_SAMPLES, True, db_name=ds_name, settings=settings)
     att.start_attack()
+    print(settings)

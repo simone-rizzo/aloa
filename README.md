@@ -93,21 +93,26 @@ generating noised examples.
 What are we doing is to compute all the possible triple in order
 to detect which part has the greater impact.
 
-### Configurations:
-- 000 no shadow, no model, original perturb: 60, 87, 71
-- 001 no shadow, no model, our perturbation: 58, 97, 73 
-- 010 no shadow, si model, original perturb: 59, 84, 69
-- 011 no shadow, si model, our perturbation: 59, 56, 59
-- 100 si shadow, no model, original perturb: 60, 84, 70
-- 101 si shadow, no model, our perturb:58, 97, 73
-- 110 si shadow, si model, original perturb:59, 85, 70 
-- 111 si shadow, si model, our perturb: 59, 92, 72
+
 
 # Bank dataset
+| Model type     | TR accuracy | Test accuracy | 
+| ----------- | ----------- | ----------- | 
+| NN overfitted | 0.97 | 0.70 | 
 ## MIA attacks on Neural Network balanced
 | Attack type     | Precision | Recall | F1 score | 
 | ----------- | ----------- | ----------- | ----------- |
 | Conf vector(2) | 0.53 | 0.64 | 0.58 |
-| My lblonly(16) | 0. | 0. | 0. |
-| My lblonly w label(16) | 0. | 0. | 0. |
+| My lblonly | 0. | 0. | 0. |
+| My lblonly w label(4) | 0.59 | 0.85 | 0.70 |
 | Original lblonly | 0.60 | 0.87 | 0.71 |
+
+### Configurations:
+- 000 no shadow, no model, original perturb: 59, 81, 69
+- 001 no shadow, no model, our perturbation: 58, 97, 73 
+- 010 no shadow, si model, original perturb: 59, 84, 70
+- 011 no shadow, si model, our perturbation: 59, 56, 57
+- 100 si shadow, no model, original perturb: 60, 84, 70
+- 101 si shadow, no model, our perturb:58, 97, 73
+- 110 si shadow, si model, original perturb:59, 85, 70 
+- 111 si shadow, si model, our perturb: 59, 92, 72

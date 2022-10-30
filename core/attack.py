@@ -7,7 +7,6 @@ from sklearn.preprocessing import StandardScaler
 import numpy as np
 from bboxes.rfbb import RandomForestBlackBox
 
-
 class Attack(metaclass=abc.ABCMeta):
 
     def __init__(self, bbmodel, is_nn, database_name):

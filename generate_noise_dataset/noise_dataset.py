@@ -9,7 +9,6 @@ dataset_shadow = pd.read_csv(filename)
 dataset_shadow.pop("class")
 n_col = dataset_shadow.shape[1]
 n_rows = dataset_shadow.shape[0]
-new_df = pd.DataFrame()
 for c in range(n_col):
     percentage = int((perc/float(100))*n_rows)
     index_to_replace = np.random.choice([i for i in range(n_rows)], size=percentage)
