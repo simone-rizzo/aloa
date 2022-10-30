@@ -122,7 +122,7 @@ to detect which part has the greater impact.
 # Synth dataset
 | Model type     | TR accuracy | Test accuracy | 
 | ----------- | ----------- | ----------- | 
-| NN overfitted | 1.00 | 0. | 
+| NN overfitted | 1.00 | 0.90 | 
 ## MIA attacks on Neural Network balanced
 | Attack type     | Precision | Recall | F1 score | 
 | ----------- | ----------- | ----------- | ----------- |

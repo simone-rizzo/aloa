@@ -93,7 +93,7 @@ class NeuralNetworkBlackBox(SklearnClassifierWrapper):
 
 
 if __name__ == "__main__":
-    db_name = "bank"
+    db_name = "synth"
     bb = NeuralNetworkBlackBox(db_name=db_name)
     import pandas as pd
     train_set = pd.read_csv("../data/{}/original_train_set.csv".format(db_name))
