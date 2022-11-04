@@ -50,7 +50,7 @@ def trainRFClassifier(x, y):
 
 def train_target_model():
     """
-    Here we train the shadow model on the adult_noise_shadow_labelled dataset, in order
+    Here we train the shadow model on the noise_shadow.csv dataset, in order
     to imitate the black-box model.
     :return:
     """
@@ -111,7 +111,7 @@ target_test_label = pd.read_csv("../data/original_test_label.csv")
 
 
 # Source model is model trained with similar data of the target one with the same architecture.
-source_train_set = pd.read_csv("../data/adult_noise_shadow_labelled")
+source_train_set = pd.read_csv("../data/noise_shadow.csv")
 source_train_label = source_train_set.pop("class")
 source_train_set, source_test_set, source_train_label, source_test_label = train_test_split(source_train_set, source_train_label, stratify=source_train_label,
                                                                 test_size=TS_PERC, random_state=1)

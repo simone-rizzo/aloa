@@ -27,6 +27,8 @@ class Attack(metaclass=abc.ABCMeta):
         # The model assign the label for the noise dataset.
         # if nn we have to scale the dataset first.
         noise_data = pd.read_csv("../data/{}/noise_shadow.csv".format(self.db_name))
+        if 'class' in noise_data.columns:
+            noise_data.pop("class")
         predictions = self.bb.predict(noise_data.values)
         self.noise_train_label = pd.DataFrame(predictions) #prima effettuo il pop
         self.noise_train_set = noise_data # successivamente assegno

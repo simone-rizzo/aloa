@@ -16,7 +16,7 @@ for c in range(n_col):
     for ind, val in zip(index_to_replace, new_values):
         dataset_shadow.iloc[ind, c] = round(val, 2)
 
-filename = "../data/noise_shadow.csv"
+filename = "../data/noise_shadow_old.csv"
 dataset_shadow.to_csv(filename, index=False)
 """f = open(filename, 'wb')
 pickle.dump(dataset_shadow, f)

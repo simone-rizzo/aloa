@@ -24,7 +24,7 @@ labels = df.pop('target')
 # We split 80-20
 train_set, test_set, train_label, test_label = train_test_split(df, labels, stratify=labels,
                                                                 test_size=0.20, random_state=0)
-test_set.to_csv('../../data/synth/noise_shadow.csv', index=False)
+test_set.to_csv('../../data/synth/noise_shadow_old.csv', index=False)
 
 
 train_set, test_set, train_label, test_label = train_test_split(train_set, train_label, stratify=train_label,
@@ -52,5 +52,5 @@ shadow, shadow_l = undersample.fit_resample(shadow, shadow_l.values)
 print(shadow.shape)
 shadow = pd.DataFrame(shadow)
 shadow_l = pd.DataFrame(shadow_l)
-shadow.to_csv("data/bank/noise_shadow.csv", index=False)"""
+shadow.to_csv("data/bank/noise_shadow_old.csv", index=False)"""
 

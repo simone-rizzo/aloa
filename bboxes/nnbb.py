@@ -66,7 +66,19 @@ class NeuralNetworkBlackBox(SklearnClassifierWrapper):
         """
         tr, _ = normalize(tr, self.scaler, False, db_name=self.db_name)  # scaling layer # first we scale the values.
         inputs = keras.Input(shape=(tr.shape[1],))
-        if self.db_name == 'bank' or self.db_name == 'adult':
+        if self.db_name == 'bank':
+            x = layers.Dense(300, activation="relu")(inputs)
+            x = layers.Dense(300, activation="relu")(x)
+            x = layers.Dense(300, activation="relu")(x)
+            x = layers.Dense(300, activation="relu")(x)
+            x = layers.Dense(300, activation="relu")(x)
+            output = layers.Dense(2, activation="softmax")(x)
+            opt = tf.optimizers.Adam()
+            model = keras.Model(inputs=inputs, outputs=output, name="nn_bb_model")
+            model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
+            model.fit(tr, tr_l, epochs=epochs, batch_size=250)
+            return NeuralNetworkBlackBox(model, self.scaler, self.db_name)
+        elif self.db_name == 'adult':
             x = layers.Dense(300, activation="relu")(inputs)
             x = layers.Dense(300, activation="relu")(x)
             x = layers.Dense(300, activation="relu")(x)

@@ -74,12 +74,12 @@ tr, tr_l = undersample.fit_resample(train_set, train_label.values)
 # Compilation of the model and training.
 opt = tf.optimizers.Adam()
 model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
-history = model.fit(train_set, train_label, epochs=250, batch_size=4096)
+history = model.fit(tr, tr_l, epochs=250, batch_size=512)
 
 # Performances on training set
-train_prediction = model.predict(train_set)
+train_prediction = model.predict(tr)
 train_prediction = np.argmax(train_prediction, axis=1)
-report = classification_report(train_label, train_prediction)
+report = classification_report(tr_l, train_prediction)
 print(report)
 
 # Performances on test set

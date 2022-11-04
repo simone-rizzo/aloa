@@ -128,7 +128,7 @@ to detect which part has the greater impact.
 | ----------- | ----------- | ----------- | ----------- |
 | Conf vector(2) | 0.57 | 0.64 | 0.60 |
 | My lblonly | 0. | 0. | 0. |
-| My lblonly w label(4) | 0. | 0. | 0. |
+| My lblonly w label(4) | 0.60 | 0.40 | 0.48 |
 | Original lblonly | 0.54 | 1.00 | 0.70 |
 
 ### Configurations:

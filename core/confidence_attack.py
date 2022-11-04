@@ -164,7 +164,7 @@ class ConfidenceAttack(Attack):
         undersample = RandomUnderSampler(sampling_strategy="majority")
         df_new, ts_l = undersample.fit_resample(df_final, ts_l)
         df_final = pd.concat([df_new, ts_l], axis=1)
-        print(df_final.shape)
+        print(df_new.shape)
         test_l = []
         predicted = []
 
@@ -208,7 +208,7 @@ class ConfidenceAttack(Attack):
 if __name__ == "__main__":
     N_SHADOW_MODELS = 2
     # bb = RandomForestBlackBox()
-    ds_name = 'adult'
+    ds_name = 'synth'
     bb = NeuralNetworkBlackBox(db_name=ds_name)
     att = ConfidenceAttack(bb, N_SHADOW_MODELS, True, db_name=ds_name)
     att.start_attack()

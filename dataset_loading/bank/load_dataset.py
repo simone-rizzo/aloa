@@ -53,5 +53,5 @@ shadow, shadow_l = undersample.fit_resample(shadow, shadow_l.values)
 print(shadow.shape)
 shadow = pd.DataFrame(shadow)
 shadow_l = pd.DataFrame(shadow_l)
-shadow.to_csv("data/bank/noise_shadow.csv", index=False)
+shadow.to_csv("data/bank/noise_shadow_old.csv", index=False)
 

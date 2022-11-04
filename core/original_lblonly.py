@@ -151,7 +151,7 @@ class Original_lblonly(Attack):
 
     def train_shadow_model(self):
         """
-        Here we train the shadow model on the adult_noise_shadow_labelled dataset, in order
+        Here we train the shadow model on the noise_shadow.csv dataset, in order
         to imitate the black-box model.
         :return:
         """

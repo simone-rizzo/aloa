@@ -24,5 +24,5 @@ for c in range(n_col):
                 sample *= -1
             dataset_shadow.iloc[ind, c] += round(dataset_shadow.iat[ind, c]*sample, 3)
 
-filename = "../data/adult_noise_perturbation_shadow.csv"
+filename = "../data/noise_shadow.csv.csv"
 dataset_shadow.to_csv(filename)
