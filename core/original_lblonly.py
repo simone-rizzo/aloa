@@ -17,7 +17,6 @@ from sklearn.utils import shuffle
 from sklearn.metrics import roc_curve, accuracy_score, precision_score, classification_report
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
-
 class Original_lblonly(Attack):
     def __init__(self, bb, NOISE_SAMPLES, is_nn=False, db_name='adult', settings=[0, 0, 0]):
         super().__init__(bb, is_nn, database_name=db_name)
@@ -87,7 +86,6 @@ class Original_lblonly(Attack):
                     score = np.mean(np.array(list(map(lambda x: 1 if x == label else 0, noise_values))))
                     scores.append(score)
             else:  # Miss classification
-                # print("miss classified")
                 scores.append(0)
             index += 1
 
@@ -127,12 +125,12 @@ class Original_lblonly(Attack):
             report = classification_report(tr_l[indexes], pred_tr_labels[indexes])
             print(report)
             # df_in.to_csv("scores_tr{}.csv".format(m))
-            write_report = open("report_shadow_train{}.txt".format(m), "w")
-            write_report.write(report)
+            # _report = open("report_shadow_train{}.txt".format(m), "w")
+            # write_report.write(report)
 
             # Test
             pred_labels = shadow.predict(ts)
-            if self.settings[0] == 0:
+            if self.settings[2] == 0:
                 pred_ts_robustness = self.robustness_score_label(shadow, ts, ts_l, self.NOISE_SAMPLES, scaler=self.scaler) # old implementation
             else:
                 pred_ts_robustness = self.carlini_binary_rand_robust(shadow, ts, ts_l, noise_samples=self.NOISE_SAMPLES, p=0.6)
@@ -141,8 +139,8 @@ class Original_lblonly(Attack):
             df_out["target_label"] = 0
             report = classification_report(ts_l, pred_labels)
             print(report)
-            write_report = open("nn_report_shadow_test{}.txt".format(m), "w")
-            write_report.write(report)
+            # write_report = open("nn_report_shadow_test{}.txt".format(m), "w")
+            # write_report.write(report)
             # We merge the dataframes with IN/OUT target and we save it.
             df_final = pd.concat([df_in, df_out])
             # Save the dataset
@@ -218,7 +216,6 @@ class Original_lblonly(Attack):
                                                                                 self.noise_train_label)
         self.noise_train_set, self.noise_train_label = shuffle(self.noise_train_set, self.noise_train_label)
 
-
     def perturb_datasets(self):
         # We merge the scores for the shadow perturbed data and we assign (1-0 in out label)
         if self.settings[0] == 0:
@@ -269,6 +266,10 @@ class Original_lblonly(Attack):
 
 
         self.bb_data_scores = np.concatenate([target_tr_scores, target_ts_scores], axis=0)
+        tmp = pd.DataFrame(self.bb_data_scores, columns=['score'])
+        tmp['taget'] = self.bb_data_label
+        tmp.to_csv("./test_dataset")
+
 
     def train_test_attackmodel(self):
         # Undersampling for 50-50 balanced test set.
@@ -294,16 +295,16 @@ class Original_lblonly(Attack):
             acc_test_t, _, _, _, report = self.get_max_accuracy(self.bb_data_label, self.bb_data_scores, thresholds=[t])
             print(report)
             print("Threshold choosed {}".format(t))
-            write_report = open("bank_original_lblonly_nn.txt".format(self.NOISE_SAMPLES), "w")
-            write_report.write(report)
+            # write_report = open("bank_original_lblonly_nn.txt".format(self.NOISE_SAMPLES), "w")
+            # write_report.write(report)
 
 
 if __name__ == "__main__":
     NOISE_SAMPLES = 1000
     # bb = RandomForestBlackBox()
-    ds_name = 'synth'
+    ds_name = 'adult'
     bb = NeuralNetworkBlackBox(db_name=ds_name)
-    settings = [1, 1, 1] # first is shadow model or not, second train model or not, third perturbation algorithm.
+    settings = [0, 0, 0] # first is shadow model or not, second train model or not, third perturbation algorithm.
     # NOISE_SAMPLES = int(sys.argv[1]) if len(sys.argv)> 1 else NOISE_SAMPLES
     att = Original_lblonly(bb, NOISE_SAMPLES, True, db_name=ds_name, settings=settings)
     att.start_attack()

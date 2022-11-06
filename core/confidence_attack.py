@@ -23,10 +23,11 @@ which uses the convidence vector probability.
 
 
 class ConfidenceAttack(Attack):
-    def __init__(self, bb, N_SHADOW_MODELS, is_nn=False, db_name='adult'):
+    def __init__(self, bb, N_SHADOW_MODELS, is_nn=False, db_name='adult', multy_attack=False):
         super().__init__(bb, is_nn, database_name=db_name)
         self.N_SHADOW_MODELS = N_SHADOW_MODELS
         self.shadow_models = []
+        self.multy_attack = multy_attack
 
     def train_shadow_models(self):
         self.tr_chunk_size = ceil(self.noise_train_set.shape[0] / self.N_SHADOW_MODELS)  # chunk for the train set.
@@ -46,7 +47,7 @@ class ConfidenceAttack(Attack):
             tr, tr_l = undersample.fit_resample(tr, tr_l)
 
             # we train the model.
-            shadow = self.bb.train_model(tr, np.array(tr_l), epochs=250)
+            shadow = self.bb.train_model(tr, np.array(tr_l))
 
             # Report on training set
             pred_tr_labels = shadow.predict(tr)
@@ -83,49 +84,18 @@ class ConfidenceAttack(Attack):
         attack_dataset = pd.concat(self.attack_dataset)
         classes = list(attack_dataset['class_label'].unique())
         self.attack_models = []
-        attack_dataset.pop('class_label')
-        tr_label = attack_dataset.pop('target_label')
-        #Let's undersample
-        undersample = RandomUnderSampler(sampling_strategy="majority")
-        tr, tr_label = undersample.fit_resample(attack_dataset, tr_label)
-
-        train_set, test_set, train_label, test_label = train_test_split(tr, tr_label, stratify=tr_label,
-                                                                        test_size=0.20, random_state=1)
-        mdl = RandomForestClassifier()
-        mdl.fit(train_set.values, train_label.values)
-        pred = mdl.predict(train_set.values)
-        report = classification_report(train_label, pred)
-        print(report)
-
-        # Prediction and report of the performances.
-        pred = mdl.predict(test_set.values)
-        report = classification_report(test_label, pred)
-        print(report)
-        self.attack_model = mdl
-        """for c in classes:
-            print("Class:{}".format(c))
-            tr = attack_dataset[attack_dataset['class_label'] == c]
-            tr.pop('class_label')
-            tr_label = tr.pop('target_label')
-
-            # Print of the unbalanced dataset
-            unique, counts = np.unique(tr_label, return_counts=True)
-            print(np.asarray((unique, counts)).T)
-
-            # Undersampling and splitting
+        if not self.multy_attack:
+            attack_dataset.pop('class_label')
+            tr_label = attack_dataset.pop('target_label')
+            # Let's undersample
             undersample = RandomUnderSampler(sampling_strategy="majority")
-            tr, tr_label = undersample.fit_resample(tr, tr_label)
-
-            # Print after the balancing.
-            unique, counts = np.unique(tr_label, return_counts=True)
-            print(np.asarray((unique, counts)).T)
+            tr, tr_label = undersample.fit_resample(attack_dataset, tr_label)
 
             train_set, test_set, train_label, test_label = train_test_split(tr, tr_label, stratify=tr_label,
                                                                             test_size=0.20, random_state=1)
-
-            # We train the attacker model.
             mdl = RandomForestClassifier()
             mdl.fit(train_set.values, train_label.values)
+            self.th = self.th_model(train_set.values, train_label.values)
             pred = mdl.predict(train_set.values)
             report = classification_report(train_label, pred)
             print(report)
@@ -134,9 +104,43 @@ class ConfidenceAttack(Attack):
             pred = mdl.predict(test_set.values)
             report = classification_report(test_label, pred)
             print(report)
+            self.attack_model = mdl
+        else:
+            for c in classes:
+                print("Class:{}".format(c))
+                tr = attack_dataset[attack_dataset['class_label'] == c]
+                tr.pop('class_label')
+                tr_label = tr.pop('target_label')
 
-            # We merge all the attack models
-            self.attack_models.append(mdl)"""
+                # Print of the unbalanced dataset
+                unique, counts = np.unique(tr_label, return_counts=True)
+                print(np.asarray((unique, counts)).T)
+
+                # Undersampling and splitting
+                undersample = RandomUnderSampler(sampling_strategy="majority")
+                tr, tr_label = undersample.fit_resample(tr, tr_label)
+
+                # Print after the balancing.
+                unique, counts = np.unique(tr_label, return_counts=True)
+                print(np.asarray((unique, counts)).T)
+
+                train_set, test_set, train_label, test_label = train_test_split(tr, tr_label, stratify=tr_label,
+                                                                                test_size=0.20, random_state=1)
+
+                # We train the attacker model.
+                mdl = RandomForestClassifier()
+                mdl.fit(train_set.values, train_label.values)
+                pred = mdl.predict(train_set.values)
+                report = classification_report(train_label, pred)
+                print(report)
+
+                # Prediction and report of the performances.
+                pred = mdl.predict(test_set.values)
+                report = classification_report(test_label, pred)
+                print(report)
+
+                # We merge all the attack models
+                self.attack_models.append(mdl)
 
     def test_attack(self):
         # Getting predict proba from the black box on tr and assign 1 as target_label
@@ -168,47 +172,56 @@ class ConfidenceAttack(Attack):
         test_l = []
         predicted = []
 
-        att_c = self.attack_model
-        df_new.pop("class_labels")
-        out = att_c.predict(df_new.values)
-        report = classification_report(ts_l, out)
-        print(report)
-        """for c, i in enumerate(classes):
-            print("Results for class: {}".format(c))
-            # Obtain the correct attack model for the class c.
-            att_c = self.attack_models[i]
-            # Filter the dataset for data of the same class_label
-            test = df_final[df_final['class_labels'] == c]
-            test.pop("class_labels")
-
-            # Obtaining the target
-            test_label = test.pop("target_label")
-            pred = att_c.predict(test.values)
-            # pred = list(map(lambda x: 0 if max(x) < att_c else 1, test.values))
-            report = classification_report(test_label, pred)
+        if not self.multy_attack:
+            att_c = self.attack_model
+            df_new.pop("class_labels")
+            out = att_c.predict(df_new.values)
+            report = classification_report(ts_l, out)
             print(report)
-            test_l.extend(test_label.values)
-            predicted.extend(pred)
+            print(self.th)
+            report = self.predict_th_model(self.th, df_new.values, ts_l)
+            print(report)
+        else:
+            for c, i in enumerate(classes):
+                print("Results for class: {}".format(c))
+                # Obtain the correct attack model for the class c.
+                att_c = self.attack_models[i]
+                # Filter the dataset for data of the same class_label
+                test = df_final[df_final['class_labels'] == c]
+                test.pop("class_labels")
 
-        print("Jointed:")
-        report = classification_report(test_l, predicted)
-        print(report)"""
+                # Obtaining the target
+                test_label = test.pop("target_label")
+                pred = att_c.predict(test.values)
+                # pred = list(map(lambda x: 0 if max(x) < att_c else 1, test.values))
+                report = classification_report(test_label, pred)
+                print(report)
+                test_l.extend(test_label.values)
+                predicted.extend(pred)
+            print("Jointed:")
+            report = classification_report(test_l, predicted)
+            print(report)
 
     def th_model(self, data, label):
         thsld = np.linspace(0, 1)
         results = []
         for t in thsld:
             th_data = list(map(lambda x: 0 if max(x) <= t else 1, data))
-            p = recall_score(label, th_data)
+            p = precision_score(label, th_data)
             results.append(p)
             # print(classification_report(label, th_data))
         return thsld[np.argmax(results)]
+
+    def predict_th_model(self, th, data, label):
+        th_data = list(map(lambda x: 0 if max(x) < th else 1, data))
+        report = classification_report(label, th_data)
+        return report
 
 
 if __name__ == "__main__":
     N_SHADOW_MODELS = 2
     # bb = RandomForestBlackBox()
-    ds_name = 'synth'
+    ds_name = 'adult'
     bb = NeuralNetworkBlackBox(db_name=ds_name)
-    att = ConfidenceAttack(bb, N_SHADOW_MODELS, True, db_name=ds_name)
+    att = ConfidenceAttack(bb, N_SHADOW_MODELS, True, db_name=ds_name, multy_attack=False)
     att.start_attack()

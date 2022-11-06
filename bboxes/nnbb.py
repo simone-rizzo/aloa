@@ -88,7 +88,7 @@ class NeuralNetworkBlackBox(SklearnClassifierWrapper):
             opt = tf.optimizers.Adam()
             model = keras.Model(inputs=inputs, outputs=output, name="nn_bb_model")
             model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
-            model.fit(tr, tr_l, epochs=epochs, batch_size=250)
+            model.fit(tr, tr_l, epochs=250, batch_size=250)
             return NeuralNetworkBlackBox(model, self.scaler, self.db_name)
         elif self.db_name == 'synth':
             x = layers.Dense(300, activation="relu")(inputs)

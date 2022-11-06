@@ -1,6 +1,7 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
 pd.options.mode.chained_assignment = None  # default='warn'
+from imblearn.under_sampling import RandomUnderSampler
 
 columns = ['age', 'workclass', 'fnlwgt', 'education', 'education-num', 'marital-status', 'occupation',
            'relationship', 'race', 'sex', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country', 'salary']
@@ -21,23 +22,24 @@ categorical_classes = df.select_dtypes(include=['object']).columns.tolist()
 
 # Hot encoding of all the categorical attributes.
 df = pd.get_dummies(df, columns=categorical_classes)
-
 label_dt = df.pop('class')
-train_set, shadow_set, train_label, shadow_label = train_test_split(df, label_dt, stratify=label_dt,
-                                                                    test_size=0.50, random_state=1)
+
+undersample = RandomUnderSampler(sampling_strategy="majority")
+tr, tr_l = undersample.fit_resample(df, label_dt)
+
+train_set, shadow_set, train_label, shadow_label = train_test_split(tr, tr_l, stratify=tr_l,
+                                                                    test_size=0.80, random_state=1)
 
 # Saving the shadow set and the original dataset.
 shadow_set['class'] = shadow_label.values
 train_set['class'] = train_label.values
 # This set will be used later to train and evaluate the model.
-"""train_set.to_csv('./data/adult_original.csv', index=False)
-# Thia shadow set will be used by the shadow dataset generator.
-shadow_set.to_csv('./data/adult_shadow.csv', index=False)"""
+shadow_set[:train_set.shape[0]].to_csv('../../data/adult/adult_shadow.csv', index=False)
 
 train_label = train_set.pop('class')
 # Splittig the original dataset train set with the tipical hold out percentage 80-20.
 train_set, test_set, train_label, test_label = train_test_split(train_set, train_label, stratify=train_label,
-                                                                test_size=0.95, random_state=0)
+                                                                test_size=0.20, random_state=0)
 train_set.to_csv('../../data/adult/original_train_set.csv', index=False)
 test_set.to_csv('../../data/adult/original_test_set.csv', index=False)
 train_label.to_csv('../../data/adult/original_train_label.csv', index=False)
