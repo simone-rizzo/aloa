@@ -14,7 +14,7 @@ class AttackModel:
         mdl = keras.Model(inputs=inputs, outputs=out, name="nn_bb_model")
         opt = tf.optimizers.Adam()
         mdl.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
-        mdl.fit(x=data, y=target, epochs=50, batch_size=128)
+        mdl.fit(x=data, y=target, epochs=10, batch_size=128)
         self.model = mdl
 
     def predict(self, x):

@@ -99,7 +99,7 @@ class ConfidenceAttack(Attack):
             train_set, test_set, train_label, test_label = train_test_split(tr, tr_label, stratify=tr_label,
                                                                             test_size=0.20, random_state=1)
 
-        
+
             mdl = AttackModel(train_set.values, train_label.values)
             self.th = self.th_model(train_set.values, train_label.values)
             pred = mdl.predict(train_set.values)
@@ -136,8 +136,7 @@ class ConfidenceAttack(Attack):
                                                                                 test_size=0.20, random_state=1)
 
                 # We train the attacker model.
-                mdl = RandomForestClassifier()
-                mdl.fit(train_set.values, train_label.values)
+                mdl = AttackModel(train_set.values, train_label.values)
                 pred = mdl.predict(train_set.values)
                 report = classification_report(train_label, pred)
                 print(report)
@@ -233,5 +232,5 @@ if __name__ == "__main__":
     # bb = RandomForestBlackBox()
     ds_name = 'adult'
     bb = NeuralNetworkBlackBox(db_name=ds_name)
-    att = ConfidenceAttack(bb, N_SHADOW_MODELS, True, db_name=ds_name, multy_attack=False)
+    att = ConfidenceAttack(bb, N_SHADOW_MODELS, True, db_name=ds_name, multy_attack=True)
     att.start_attack()
