@@ -266,9 +266,14 @@ class Original_lblonly(Attack):
 
 
         self.bb_data_scores = np.concatenate([target_tr_scores, target_ts_scores], axis=0)
+        # Saving score ts
         tmp = pd.DataFrame(self.bb_data_scores, columns=['score'])
         tmp['taget'] = self.bb_data_label
-        tmp.to_csv("./test_dataset")
+        tmp.to_csv("./test_score_dataset.csv", index=False)
+        # Save score tr
+        tmp2 = pd.DataFrame(self.noise_data_scores, columns=['score'])
+        tmp2['taget'] = self.noise_data_label
+        tmp2.to_csv("./train_score_dataset.csv", index=False)
 
 
     def train_test_attackmodel(self):

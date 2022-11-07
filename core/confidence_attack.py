@@ -1,5 +1,8 @@
 import os
 import sys
+
+from core.attack_model import AttackModel
+
 file_dir = os.path.dirname("..")
 sys.path.append(file_dir)
 from math import ceil
@@ -8,14 +11,16 @@ import numpy as np
 import pandas as pd
 from imblearn.under_sampling import RandomUnderSampler
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn import tree
-from sklearn.metrics import classification_report, precision_score, recall_score
+from sklearn.metrics import classification_report, precision_score, recall_score, accuracy_score
 from bboxes.nnbb import NeuralNetworkBlackBox
 
 from bboxes.rfbb import RandomForestBlackBox
 from core.attack import Attack
-
+from tensorflow.keras import layers
+import tensorflow as tf
+from tensorflow import keras
 """
 Confidence Attack is the official MIA attack proposed on the paper: https://www.cs.cornell.edu/~shmat/shmat_oak17.pdf
 which uses the convidence vector probability.
@@ -93,15 +98,18 @@ class ConfidenceAttack(Attack):
 
             train_set, test_set, train_label, test_label = train_test_split(tr, tr_label, stratify=tr_label,
                                                                             test_size=0.20, random_state=1)
-            mdl = RandomForestClassifier()
-            mdl.fit(train_set.values, train_label.values)
+
+        
+            mdl = AttackModel(train_set.values, train_label.values)
             self.th = self.th_model(train_set.values, train_label.values)
             pred = mdl.predict(train_set.values)
+            # pred = np.argmax(pred, axis=1)
             report = classification_report(train_label, pred)
             print(report)
 
             # Prediction and report of the performances.
             pred = mdl.predict(test_set.values)
+            # pred = np.argmax(pred, axis=1)
             report = classification_report(test_label, pred)
             print(report)
             self.attack_model = mdl
@@ -176,7 +184,9 @@ class ConfidenceAttack(Attack):
             att_c = self.attack_model
             df_new.pop("class_labels")
             out = att_c.predict(df_new.values)
+            # out = np.argmax(out, axis=1)
             report = classification_report(ts_l, out)
+            print("Result:")
             print(report)
             print(self.th)
             report = self.predict_th_model(self.th, df_new.values, ts_l)
