@@ -297,6 +297,7 @@ class Original_lblonly(Attack):
             # Evaluation attack model
             pred = mdl.predict(np.array(self.bb_data_scores).reshape(-1, 1))
             report = classification_report(self.bb_data_label, pred)
+            self.save_roc_curve_data(self.bb_data_label, pred, "../results/{}/nn/originallblonly_attack_roc_{}.csv".format(self.db_name, self.settings))
             print("Final")
             print(report)
             f = open("../results/{}/nn/originallblonly_attack_ts_{}.txt".format(self.db_name, self.settings), "w")
@@ -343,9 +344,10 @@ def go_attack(NOISE_SAMPLES,ds_name,settings,):
 if __name__ == "__main__":
     NOISE_SAMPLES = 1000
     # bb = RandomForestBlackBox()
-    ds_name = 'adult'
+    ds_name = 'bank'
     settings = [0, 0, 0] # first is shadow model or not, second train model or not, third perturbation algorithm.
-    config_settings = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]]
+    # config_settings = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]]
+    config_settings = [[0, 0, 0], [0, 1, 1]]
     threads = []
     for sett in config_settings:
         p = Process(target=go_attack, args=(NOISE_SAMPLES, ds_name, sett,))
