@@ -47,6 +47,11 @@ class Attack(metaclass=abc.ABCMeta):
         out = model.predict(x)
         return classification_report(y, out)
 
+    def save_roc_curve_data(self, true_labels, pred_labels, file_path):
+        roc_df = pd.DataFrame(true_labels, columns=['target'])
+        roc_df['pred'] = pred_labels
+        roc_df.to_csv(file_path, index=False)
+
     def normalize(self, ds, scaler=None, dataFrame=True):
         """
         Normalize the dataset in order to be fitted inside the model.

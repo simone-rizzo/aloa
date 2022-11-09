@@ -233,7 +233,7 @@ class My_lblonly(Attack):
         df_out['target_label'] = 0
         df_out['class_labels'] = class_labels2
 
-        # Merge the results
+        # Merge the lblonly_improvments
         df_final = pd.concat([df_in, df_out])
         df_final.to_csv("test_dataset_perturbed.csv") # we save the merged dataset.
         classes = list(df_final['class_labels'].unique())

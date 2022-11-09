@@ -1,5 +1,8 @@
 import os
 import sys
+
+from core.attack_model import AttackModel
+
 file_dir = os.path.dirname("..")
 sys.path.append(file_dir)
 from core.attack import Attack
@@ -283,34 +286,74 @@ class Original_lblonly(Attack):
         self.bb_data_scores = np.ndarray.flatten(self.bb_data_scores)
         # get the test accuracy at the threshold selected on the source data
         if self.settings[1] == 1:
-            mdl = RandomForestClassifier()
-            mdl.fit(np.array(self.noise_data_scores).reshape(-1, 1), self.noise_data_label)
+            mdl = AttackModel(np.array(self.noise_data_scores).reshape(-1, 1), self.noise_data_label, attack_type='perturb')
             # Training attack model
             pred = mdl.predict(np.array(self.noise_data_scores).reshape(-1, 1))
             report = classification_report(self.noise_data_label, pred)
             print(report)
+            f = open("../results/{}/nn/originallblonly_attack_tr_{}.txt".format(self.db_name, self.settings), "w")
+            f.write(report)
+            f.close()
             # Evaluation attack model
             pred = mdl.predict(np.array(self.bb_data_scores).reshape(-1, 1))
             report = classification_report(self.bb_data_label, pred)
             print("Final")
             print(report)
+            f = open("../results/{}/nn/originallblonly_attack_ts_{}.txt".format(self.db_name, self.settings), "w")
+            f.write(report)
+            f.close()
+
+            f = open("../lblonly_improvments/{}/{}.txt".format(self.db_name, self.settings), "w")
+            f.write(report)
+            f.close()
         else:
             acc_source, t, prec_source, tprec, report = self.get_max_accuracy(self.noise_data_label, self.noise_data_scores)
             print(report)
+            f = open("../results/{}/nn/originallblonly_attack_tr_{}.txt".format(self.db_name, self.settings), "w")
+            f.write(report)
+            f.write("\nThreshold choosed {}".format(t))
+            f.close()
             acc_test_t, _, _, _, report = self.get_max_accuracy(self.bb_data_label, self.bb_data_scores, thresholds=[t])
             print(report)
+
+            out = [1 if m > t else 0 for m in self.bb_data_scores]
+            self.save_roc_curve_data(self.bb_data_label, out, "../results/{}/nn/originallblonly_attack_roc_{}.csv".format(self.db_name, self.settings))
+
             print("Threshold choosed {}".format(t))
-            # write_report = open("bank_original_lblonly_nn.txt".format(self.NOISE_SAMPLES), "w")
-            # write_report.write(report)
+            f = open("../results/{}/nn/originallblonly_attack_ts_{}.txt".format(self.db_name, self.settings), "w")
+            f.write(report)
+            f.write("\nThreshold choosed {}".format(t))
+            f.close()
+
+            f = open("../lblonly_improvments/{}/{}.txt".format(self.db_name, self.settings), "w")
+            f.write(report)
+            f.write("\nThreshold choosed {}".format(t))
+            f.close()
+
+
+from multiprocessing import Process
+
+
+def go_attack(NOISE_SAMPLES,ds_name,settings,):
+    bb = NeuralNetworkBlackBox(db_name=ds_name)
+    att = Original_lblonly(bb, NOISE_SAMPLES, True, db_name=ds_name, settings=settings)
+    att.start_attack()
 
 
 if __name__ == "__main__":
     NOISE_SAMPLES = 1000
     # bb = RandomForestBlackBox()
     ds_name = 'adult'
-    bb = NeuralNetworkBlackBox(db_name=ds_name)
     settings = [0, 0, 0] # first is shadow model or not, second train model or not, third perturbation algorithm.
+    config_settings = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]]
+    threads = []
+    for sett in config_settings:
+        p = Process(target=go_attack, args=(NOISE_SAMPLES, ds_name, sett,))
+        p.start()
+        threads.append(p)
+    for p in threads:
+        p.join()
     # NOISE_SAMPLES = int(sys.argv[1]) if len(sys.argv)> 1 else NOISE_SAMPLES
-    att = Original_lblonly(bb, NOISE_SAMPLES, True, db_name=ds_name, settings=settings)
-    att.start_attack()
-    print(settings)
+    # att = Original_lblonly(bb, NOISE_SAMPLES, True, db_name=ds_name, settings=settings)
+    # att.start_attack()
+    # print(settings)

@@ -58,7 +58,7 @@ generating noised examples.
 | DT | 0.88 | 0.83|
 | RF | 1.0 | 0.84 |
 | NN | 0.89 | 0.83 |
-| NN overfitted | 0.99 | 0.81 |
+| NN overfitted | 1.0 | 0.79 |
 
 ## MIA attacks on Random forest model
 | Attack type     | Precision | Recall | F1 score | 
@@ -80,10 +80,10 @@ generating noised examples.
 ## MIA attacks on Neural Network balanced
 | Attack type     | Precision | Recall | F1 score | 
 | ----------- | ----------- | ----------- | ----------- |
-| Conf vector(16) | 0.52 | 0.76 | 0.62 |
-| My lblonly(16) | 0.50 | 0.77 | 0.60 |
-| My lblonly w label(16) | 0.51 | 0.94 | 0.66 |
-| Original lblonly | 0.52 | 0.73 | 0.61 |
+| Conf vector(2) | 0.55 | 0.96 | 0.70 |
+| My lblonly(4) | 0. | 0. | 0. |
+| My lblonly w label(4) | 0. | 0. | 0. |
+| Original lblonly | 0. | 0. | 0. |
 
 ## Figuring out the important things of an attack
 1) Using or not shadow models.

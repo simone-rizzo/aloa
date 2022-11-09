@@ -103,15 +103,21 @@ class ConfidenceAttack(Attack):
             mdl = AttackModel(train_set.values, train_label.values)
             self.th = self.th_model(train_set.values, train_label.values)
             pred = mdl.predict(train_set.values)
-            # pred = np.argmax(pred, axis=1)
             report = classification_report(train_label, pred)
             print(report)
+            f = open("../results/{}/nn/confidence_attack_tr.txt".format(self.db_name), "a")
+            f.write(report)
+            f.close()
 
             # Prediction and report of the performances.
             pred = mdl.predict(test_set.values)
             # pred = np.argmax(pred, axis=1)
             report = classification_report(test_label, pred)
             print(report)
+            f = open("../results/{}/nn/confidence_attack_vl.txt".format(self.db_name), "a")
+            f.write(report)
+            f.close()
+
             self.attack_model = mdl
         else:
             for c in classes:
@@ -164,7 +170,7 @@ class ConfidenceAttack(Attack):
         df_out['target_label'] = 0
         df_out['class_labels'] = class_labels2
 
-        # Merge the results
+        # Merge the lblonly_improvments
         df_final = pd.concat([df_in, df_out])
         classes = list(df_final['class_labels'].unique())
         print(df_final['target_label'].value_counts())
@@ -183,15 +189,12 @@ class ConfidenceAttack(Attack):
             att_c = self.attack_model
             df_new.pop("class_labels")
             out = att_c.predict(df_new.values)
-            # out = np.argmax(out, axis=1)
             report = classification_report(ts_l, out)
-            roc_df = pd.DataFrame(ts_l.values, columns=['target'])
-            roc_df['pred'] = out
-            roc_df.to_csv("../lbl_only_improvements/adult/{}.csv".format("confidence"), index=False)
+            self.save_roc_curve_data(ts_l.values, out, "../results/{}/nn/{}.csv".format(self.db_name, "confidence_roc"))
             print("Result:")
-            print(report)
-            print(self.th)
-            report = self.predict_th_model(self.th, df_new.values, ts_l)
+            f = open("../results/{}/nn/confidence_attack_ts.txt".format(self.db_name), "a")
+            f.write(report)
+            f.close()
             print(report)
         else:
             for c, i in enumerate(classes):
