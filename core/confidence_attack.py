@@ -185,6 +185,9 @@ class ConfidenceAttack(Attack):
             out = att_c.predict(df_new.values)
             # out = np.argmax(out, axis=1)
             report = classification_report(ts_l, out)
+            roc_df = pd.DataFrame(ts_l.values, columns=['target'])
+            roc_df['pred'] = out
+            roc_df.to_csv("../lbl_only_improvements/adult/{}.csv".format("confidence"), index=False)
             print("Result:")
             print(report)
             print(self.th)
@@ -232,5 +235,5 @@ if __name__ == "__main__":
     # bb = RandomForestBlackBox()
     ds_name = 'adult'
     bb = NeuralNetworkBlackBox(db_name=ds_name)
-    att = ConfidenceAttack(bb, N_SHADOW_MODELS, True, db_name=ds_name, multy_attack=True)
+    att = ConfidenceAttack(bb, N_SHADOW_MODELS, True, db_name=ds_name, multy_attack=False)
     att.start_attack()

@@ -85,6 +85,16 @@ report = classification_report(tr['taget'].values, predicted)
 print(report)
 predicted = mdl.predict(ts['score'].values.reshape(-1, 1))
 report = classification_report(ts['taget'].values, predicted)
+from sklearn import metrics
+fpr, tpr, _ = metrics.roc_curve(predicted,  ts['taget'].values)
+
+#create ROC curve
+plt.plot(fpr, tpr)
+plt.plot([i*0.1 for i in range(11)], [i*0.1 for i in range(11)], '--', color='red')
+plt.ylabel('True Positive Rate')
+plt.xlabel('False Positive Rate')
+plt.grid()
+plt.show()
 print(report)
 
 param_grid = {
