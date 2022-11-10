@@ -105,18 +105,18 @@ class ConfidenceAttack(Attack):
             pred = mdl.predict(train_set.values)
             report = classification_report(train_label, pred)
             print(report)
-            f = open("../results/{}/nn/confidence_attack_tr.txt".format(self.db_name), "a")
+            """f = open("../results/{}/nn/confidence_attack_tr.txt".format(self.db_name), "a")
             f.write(report)
-            f.close()
+            f.close()"""
 
             # Prediction and report of the performances.
             pred = mdl.predict(test_set.values)
             # pred = np.argmax(pred, axis=1)
             report = classification_report(test_label, pred)
             print(report)
-            f = open("../results/{}/nn/confidence_attack_vl.txt".format(self.db_name), "a")
+            """f = open("../results/{}/nn/confidence_attack_vl.txt".format(self.db_name), "a")
             f.write(report)
-            f.close()
+            f.close()"""
 
             self.attack_model = mdl
         else:
@@ -192,9 +192,9 @@ class ConfidenceAttack(Attack):
             report = classification_report(ts_l, out)
             self.save_roc_curve_data(ts_l.values, out, "../results/{}/nn/{}.csv".format(self.db_name, "confidence_roc"))
             print("Result:")
-            f = open("../results/{}/nn/confidence_attack_ts.txt".format(self.db_name), "a")
+            """f = open("../results/{}/nn/confidence_attack_ts.txt".format(self.db_name), "a")
             f.write(report)
-            f.close()
+            f.close()"""
             print(report)
         else:
             for c, i in enumerate(classes):

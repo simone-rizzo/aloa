@@ -347,14 +347,14 @@ if __name__ == "__main__":
     ds_name = 'bank'
     settings = [0, 0, 0] # first is shadow model or not, second train model or not, third perturbation algorithm.
     # config_settings = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]]
-    config_settings = [[0, 0, 0], [0, 1, 1]]
+    """config_settings = [[0, 0, 0], [0, 1, 1]]
     threads = []
     for sett in config_settings:
         p = Process(target=go_attack, args=(NOISE_SAMPLES, ds_name, sett,))
         p.start()
         threads.append(p)
     for p in threads:
-        p.join()
+        p.join()"""
     # NOISE_SAMPLES = int(sys.argv[1]) if len(sys.argv)> 1 else NOISE_SAMPLES
     # att = Original_lblonly(bb, NOISE_SAMPLES, True, db_name=ds_name, settings=settings)
     # att.start_attack()

@@ -61,7 +61,7 @@ test_label = pd.read_csv("../../../data/{}/original_test_label.csv".format(ds_na
 # Here we normalize the training set and the test set
 train_set, scaler = normalize(train_set)
 test_set, _ = normalize(test_set, scaler)
-pickle.dump(scaler, open("nn_scaler.sav", 'wb'))
+pickle.dump(scaler, open("nn_scaler_regularized.sav", 'wb'))
 # scaler = pickle.load(open(scalerfile, 'rb'))
 
 # Creation of the model
@@ -89,7 +89,7 @@ report = classification_report(test_label, test_prediction)
 print(report)
 
 # Saving the model
-model.save('nn_blackbox.h5')
+model.save('nn_blackbox_regularized.h5')
 
 plt.plot(history.history['loss'])
 # plt.plot(history.history['val_loss'])
