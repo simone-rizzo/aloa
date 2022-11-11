@@ -21,8 +21,8 @@ from sklearn.metrics import roc_curve, accuracy_score, precision_score, classifi
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 class Original_lblonly(Attack):
-    def __init__(self, bb, NOISE_SAMPLES, is_nn=False, db_name='adult', settings=[0, 0, 0]):
-        super().__init__(bb, is_nn, database_name=db_name)
+    def __init__(self, bb, NOISE_SAMPLES, db_name='adult', settings=[0, 0, 0]):
+        super().__init__(bb, database_name=db_name)
         self.NOISE_SAMPLES = NOISE_SAMPLES
         self.settings = settings
         self.scaler = None
@@ -337,24 +337,25 @@ from multiprocessing import Process
 
 def go_attack(NOISE_SAMPLES,ds_name,settings,):
     bb = NeuralNetworkBlackBox(db_name=ds_name)
-    att = Original_lblonly(bb, NOISE_SAMPLES, True, db_name=ds_name, settings=settings)
+    att = Original_lblonly(bb, NOISE_SAMPLES, db_name=ds_name, settings=settings)
     att.start_attack()
 
 
 if __name__ == "__main__":
     NOISE_SAMPLES = 1000
     # bb = RandomForestBlackBox()
-    ds_name = 'bank'
+    models = []
+    ds_names = ['adult', 'bank', 'synth']
     settings = [0, 0, 0] # first is shadow model or not, second train model or not, third perturbation algorithm.
-    # config_settings = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [1, 0, 1], [1, 1, 0], [1, 1, 1]]
-    """config_settings = [[0, 0, 0], [0, 1, 1]]
+    config_settings = [[0, 0, 0], [1, 1, 1]]
     threads = []
     for sett in config_settings:
-        p = Process(target=go_attack, args=(NOISE_SAMPLES, ds_name, sett,))
-        p.start()
-        threads.append(p)
+        for ds_name in ds_names:
+            p = Process(target=go_attack, args=(NOISE_SAMPLES, ds_name, sett,))
+            p.start()
+            threads.append(p)
     for p in threads:
-        p.join()"""
+        p.join()
     # NOISE_SAMPLES = int(sys.argv[1]) if len(sys.argv)> 1 else NOISE_SAMPLES
     # att = Original_lblonly(bb, NOISE_SAMPLES, True, db_name=ds_name, settings=settings)
     # att.start_attack()

@@ -7,8 +7,8 @@ from sklearn.metrics import classification_report, precision_score, accuracy_sco
 import matplotlib.pyplot as plt
 from tensorflow.keras import layers
 import tensorflow as tf
+from sklearn import metrics
 from sklearn.model_selection import GridSearchCV
-
 from core.attack_model import AttackModel
 
 
@@ -37,23 +37,23 @@ tr = pd.read_csv("./train_score_dataset.csv")
 ts = pd.read_csv("./test_score_dataset.csv")
 
 """fig, (ax1, ax2) = plt.subplots(1, 2)
-tr[tr['taget'] == 0]['score'].plot.kde(bw_method=0.5, ax=ax1, label="Test scores")
-tr[tr['taget'] == 1]['score'].plot.kde(bw_method=0.5, ax=ax1, label="Train scores")
+tr[tr['taget'] == 0]['score'].plot.kde(ax=ax1, label="Test scores")
+tr[tr['taget'] == 1]['score'].plot.kde(ax=ax1, label="Train scores")
 boxplot = tr.boxplot(column=['score'], by='taget', ax=ax2)
 plt.title("Training score analysis")
-plt.show()"""
+plt.show()
 
-"""fig, (ax1, ax2) = plt.subplots(1, 2)
-ts[ts['taget'] == 0]['score'].plot.kde(bw_method=0.5, ax=ax1, label="Test scores")
-ts[ts['taget'] == 1]['score'].plot.kde(bw_method=0.5, ax=ax1, label="Train scores")
+fig, (ax1, ax2) = plt.subplots(1, 2)
+ts[ts['taget'] == 0]['score'].plot.kde(ax=ax1, label="Test scores")
+ts[ts['taget'] == 1]['score'].plot.kde(ax=ax1, label="Train scores")
 boxplot = ts.boxplot(column=['score'], by='taget', ax=ax2)
 plt.title("Test score analysis")
 plt.show()"""
 
 tr_avg = (tr[tr['taget'] == 1]['score'].mean() + tr[tr['taget'] == 0]['score'].mean())/2
-print(tr[tr['taget'] == 1]['score'].mean())
-print(tr[tr['taget'] == 0]['score'].mean())
-print(tr_avg)
+print("Train scores avg:{}".format(tr[tr['taget'] == 1]['score'].mean()))
+print("Test scores avg:{}".format(tr[tr['taget'] == 0]['score'].mean()))
+print("Value that separates TR and TS:{}".format(tr_avg))
 
 print("Separating the two cluster")
 report = predict_th_model(tr_avg, ts['score'].values, ts['taget'].values)
@@ -100,6 +100,7 @@ param_grid = {
 best_values = {'bootstrap': True, 'criterion': 'entropy', 'max_depth': 100, 'max_features': 'sqrt', 'min_samples_leaf': 20, 'min_samples_split': 10, 'n_estimators': 350}
 print("RF Model")
 """
+Grid search for random forest.
 rf = RandomForestClassifier()
 grid_search = GridSearchCV(estimator=rf, param_grid=param_grid, cv=3, n_jobs=12, verbose=2)
 grid_search.fit(tr['score'].values.reshape(-1, 1), tr['taget'].values)
@@ -121,3 +122,13 @@ predicted = rf.predict(ts['score'].values.reshape(-1, 1))
 report = classification_report(ts['taget'].values, predicted)
 print("Test")
 print(report)
+
+#create ROC curve
+fpr, tpr, _ = metrics.roc_curve(ts['taget'].values, predicted)
+plt.plot(fpr, tpr)
+plt.plot([0.10*i for i in range(11)], [0.10*i for i in range(11)], '--', c="red")
+plt.ylabel('True Positive Rate')
+plt.xlabel('False Positive Rate')
+plt.title("ROC curve")
+plt.grid()
+plt.show()

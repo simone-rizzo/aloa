@@ -28,8 +28,8 @@ which uses the convidence vector probability.
 
 
 class ConfidenceAttack(Attack):
-    def __init__(self, bb, N_SHADOW_MODELS, is_nn=False, db_name='adult', multy_attack=False):
-        super().__init__(bb, is_nn, database_name=db_name)
+    def __init__(self, bb, N_SHADOW_MODELS, db_name='adult', multy_attack=False):
+        super().__init__(bb, database_name=db_name)
         self.N_SHADOW_MODELS = N_SHADOW_MODELS
         self.shadow_models = []
         self.multy_attack = multy_attack
@@ -237,6 +237,6 @@ if __name__ == "__main__":
     N_SHADOW_MODELS = 2
     # bb = RandomForestBlackBox()
     ds_name = 'adult'
-    bb = NeuralNetworkBlackBox(db_name=ds_name)
-    att = ConfidenceAttack(bb, N_SHADOW_MODELS, True, db_name=ds_name, multy_attack=False)
+    bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=True)
+    att = ConfidenceAttack(bb, N_SHADOW_MODELS, db_name=ds_name, multy_attack=False)
     att.start_attack()

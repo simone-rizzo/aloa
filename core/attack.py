@@ -9,9 +9,8 @@ from bboxes.rfbb import RandomForestBlackBox
 
 class Attack(metaclass=abc.ABCMeta):
 
-    def __init__(self, bbmodel, is_nn, database_name):
+    def __init__(self, bbmodel, database_name):
         self.bb = bbmodel
-        self.is_nn = is_nn
         self.db_name = database_name
 
     @abc.abstractmethod

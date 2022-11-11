@@ -36,15 +36,19 @@ def normalize(ds, scaler=None, dataframe=True, db_name='adult'):
 
 
 class NeuralNetworkBlackBox(SklearnClassifierWrapper):
-    def __init__(self, model=None, scaler=None, db_name=None):
+    def __init__(self, model=None, scaler=None, db_name=None, regularized=False):
         if model:
             self.model = model
             self.scaler = scaler
             self.db_name = db_name
         else:
             self.db_name = db_name
-            self.model = keras.models.load_model("../models/{}/nn/nn_blackbox.h5".format(db_name))
-            self.scaler = pickle.load(open("../models/{}/nn/nn_scaler.sav".format(db_name), 'rb'))
+            if regularized:
+                self.model = keras.models.load_model("../models/{}/nn/nn_blackbox_regularized.h5".format(db_name))
+                self.scaler = pickle.load(open("../models/{}/nn/nn_scaler_regularized.sav".format(db_name), 'rb'))
+            else:
+                self.model = keras.models.load_model("../models/{}/nn/nn_blackbox.h5".format(db_name))
+                self.scaler = pickle.load(open("../models/{}/nn/nn_scaler.sav".format(db_name), 'rb'))
 
     def model(self):
         return self.model()
