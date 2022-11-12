@@ -12,9 +12,10 @@ test_label = pd.read_csv("../../../data/{}/original_test_label.csv".format(db_na
 best_param = {'criterion': 'entropy', 'max_depth': 80, 'max_features': 'auto', 'min_samples_leaf': 3, 'min_samples_split': 30}
 # dt = tree.DecisionTreeClassifier(**best_param)
 
-dt = tree.DecisionTreeClassifier()
+dt = tree.DecisionTreeClassifier(max_depth=None, min_samples_leaf=10, min_samples_split=20)
 dt.fit(train_set.values, train_label.values)
 predictions1 = dt.predict(train_set.values)
+out = dt.predict_proba(train_set.values)
 
 print(dt.predict_proba(test_set.values))
 report = classification_report(train_label, predictions1)

@@ -244,7 +244,7 @@ if __name__ == "__main__":
     # bb = RandomForestBlackBox()
     ds_name = 'adult'
     # bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=True)
-    # bb = DecisionTreeBlackBox(db_name=ds_name, regularized=True)
-    bb = RandomForestBlackBox(db_name=ds_name, regularized=True)
+    bb = DecisionTreeBlackBox(db_name=ds_name, regularized=False)
+    # bb = RandomForestBlackBox(db_name=ds_name, regularized=True)
     att = ConfidenceAttack(bb, N_SHADOW_MODELS, db_name=ds_name, multy_attack=False)
     att.start_attack()
