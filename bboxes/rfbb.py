@@ -1,12 +1,18 @@
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
+
 from bboxes.bb_wrapper import SklearnClassifierWrapper
 import pickle
 
 
 class RandomForestBlackBox(SklearnClassifierWrapper):
-    def __init__(self):
-        filename = "C:/Users/Simone/Documents/MIA/models/rf/measures_rf_black_box_original.sav"
-        self.model = pickle.load(open(filename, 'rb'))
+    def __init__(self, db_name, regularized):
+        if not regularized:
+            filename = "../models/{}/rf/rf_blackbox.sav".format(db_name)
+            self.model = pickle.load(open(filename, 'rb'))
+        else:
+            filename = "../models/{}/rf/rf_blackbox_regularized.sav".format(db_name)
+            self.model = pickle.load(open(filename, 'rb'))
 
     def model(self):
         return self.model()
@@ -23,16 +29,21 @@ class RandomForestBlackBox(SklearnClassifierWrapper):
         return rf
 
 
+if __name__ == "__main__":
+    db_name = "adult"
+    bb = RandomForestBlackBox(db_name=db_name, regularized=True)
+    import pandas as pd
+    train_set = pd.read_csv("../data/{}/original_train_set.csv".format(db_name))
+    test_set = pd.read_csv("../data/{}/original_test_set.csv".format(db_name))
+    train_label = pd.read_csv("../data/{}/original_train_label.csv".format(db_name))
+    test_label = pd.read_csv("../data/{}/original_test_label.csv".format(db_name))
 
-"""
-Testing the wrapper Abstract class with the model file format .sav
+    # Performances on training set
+    train_prediction = bb.predict(train_set.values)
+    report = classification_report(train_label, train_prediction)
+    print(report)
 
-import pandas as pd
-from sklearn.metrics import classification_report
-bb = RandomForestBlackBox()
-
-test_set = pd.read_csv("../data/original_test_set.csv", index_col=0)
-test_label = pd.read_csv("../data/original_test_label.csv", index_col=0)
-predictions1 = bb.predict(test_set)
-report = classification_report(test_label, predictions1)
-print(report)"""
+    # Performances on test set
+    test_prediction = bb.predict(test_set.values)
+    report = classification_report(test_label, test_prediction)
+    print(report)

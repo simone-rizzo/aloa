@@ -1,31 +1,50 @@
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
+from sklearn.tree import DecisionTreeClassifier
+
 from bboxes.bb_wrapper import SklearnClassifierWrapper
 import pickle
 
 
 class DecisionTreeBlackBox(SklearnClassifierWrapper):
-    def __init__(self):
-        filename = "C:/Users/Simone/Documents/MIA/models/dt/dt_black_box_original.sav"
-        self.model = pickle.load(open(filename, 'rb'))
+    def __init__(self, db_name, regularized):
+        if not regularized:
+            filename = "../models/{}/dt/dt_blackbox.sav".format(db_name)
+            self.model = pickle.load(open(filename, 'rb'))
+        else:
+            filename = "../models/{}/dt/dt_blackbox_regularized.sav".format(db_name)
+            self.model = pickle.load(open(filename, 'rb'))
 
     def model(self):
-        return self.model()
+        return self.model
 
     def predict(self, x):
-        return self.model().predict(x)
+        return self.model.predict(x)
 
     def predict_proba(self, x):
         return self.model.predict_proba(x)
 
+    def train_model(self, x, y):
+        dt = RandomForestClassifier()
+        dt.fit(x, y)
+        return dt
 
-"""
-Testing the wrapper Abstract class with the model file format .sav
 
-import pandas as pd
-from sklearn.metrics import classification_report
-bb = RandomForestBlackBox()
+if __name__ == "__main__":
+    db_name = "adult"
+    bb = DecisionTreeBlackBox(db_name=db_name, regularized=False)
+    import pandas as pd
+    train_set = pd.read_csv("../data/{}/original_train_set.csv".format(db_name))
+    test_set = pd.read_csv("../data/{}/original_test_set.csv".format(db_name))
+    train_label = pd.read_csv("../data/{}/original_train_label.csv".format(db_name))
+    test_label = pd.read_csv("../data/{}/original_test_label.csv".format(db_name))
 
-test_set = pd.read_csv("../data/original_test_set.csv", index_col=0)
-test_label = pd.read_csv("../data/original_test_label.csv", index_col=0)
-predictions1 = bb.predict(test_set)
-report = classification_report(test_label, predictions1)
-print(report)"""
+    # Performances on training set
+    train_prediction = bb.predict(train_set.values)
+    report = classification_report(train_label, train_prediction)
+    print(report)
+
+    # Performances on test set
+    test_prediction = bb.predict(test_set.values)
+    report = classification_report(test_label, test_prediction)
+    print(report)

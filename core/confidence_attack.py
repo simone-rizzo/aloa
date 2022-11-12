@@ -1,6 +1,7 @@
 import os
 import sys
 
+from bboxes.dtbb import DecisionTreeBlackBox
 from core.attack_model import AttackModel
 
 file_dir = os.path.dirname("..")
@@ -102,6 +103,7 @@ class ConfidenceAttack(Attack):
 
             mdl = AttackModel(train_set.values, train_label.values)
             self.th = self.th_model(train_set.values, train_label.values)
+            print(self.th)
             pred = mdl.predict(train_set.values)
             report = classification_report(train_label, pred)
             print(report)
@@ -196,6 +198,10 @@ class ConfidenceAttack(Attack):
             f.write(report)
             f.close()"""
             print(report)
+            print("Th model")
+            pred = list(map(lambda x: 0 if max(x) < self.th else 1, df_new.values))
+            report = classification_report(ts_l, pred)
+            print(report)
         else:
             for c, i in enumerate(classes):
                 print("Results for class: {}".format(c))
@@ -237,6 +243,8 @@ if __name__ == "__main__":
     N_SHADOW_MODELS = 2
     # bb = RandomForestBlackBox()
     ds_name = 'adult'
-    bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=True)
+    # bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=True)
+    # bb = DecisionTreeBlackBox(db_name=ds_name, regularized=True)
+    bb = RandomForestBlackBox(db_name=ds_name, regularized=True)
     att = ConfidenceAttack(bb, N_SHADOW_MODELS, db_name=ds_name, multy_attack=False)
     att.start_attack()
