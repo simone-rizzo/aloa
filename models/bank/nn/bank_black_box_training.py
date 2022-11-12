@@ -36,13 +36,8 @@ def normalize(ds, scaler=None, dataframe=True, db_name='adult'):
             normalized_arr = scaler.transform(ds)
             return normalized_arr, scaler
 
-
+""" Overfitted with epocs 250
 def get_nn_model(input_dim):
-    """
-    Creation of the neural network for the Adult Task.
-    :param input_dim: input dimension.
-    :return:
-    """
     inputs = keras.Input(shape=(input_dim,))
     x = layers.Dense(300, activation="relu")(inputs)
     # x = layers.Dropout(0.1)(x)
@@ -52,6 +47,22 @@ def get_nn_model(input_dim):
     x = layers.Dense(300, activation="relu")(x)
     # x = layers.Dropout(0.1)(x)
     # output = layers.Dense(1, activation="sigmoid")(x)
+    output = layers.Dense(2, activation="softmax")(x)
+    model = keras.Model(inputs=inputs, outputs=output, name="nn_bb_model")
+    return model
+"""
+def get_nn_model(input_dim):
+    """
+    Regularized
+    Creation of the neural network for the Adult Task.
+    :param input_dim: input dimension.
+    :return:
+    """
+    inputs = keras.Input(shape=(input_dim,))
+    x = layers.Dense(300, activation="relu")(inputs)
+    x = layers.Dropout(0.3)(x)
+    x = layers.Dense(300, activation="relu")(x)
+    x = layers.Dropout(0.3)(x)
     output = layers.Dense(2, activation="softmax")(x)
     model = keras.Model(inputs=inputs, outputs=output, name="nn_bb_model")
     return model
@@ -71,7 +82,7 @@ test_label = pd.read_csv("../../../data/{}/original_test_label.csv".format(ds_na
 # Here we normalize the training set and the test set
 train_set, scaler = normalize(train_set, db_name=ds_name)
 test_set, _ = normalize(test_set, scaler, db_name=ds_name)
-pickle.dump(scaler, open("nn_scaler.sav", 'wb'))
+pickle.dump(scaler, open("nn_scaler_regularized.sav", 'wb'))
 
 # Creation of the model
 model = get_nn_model(train_set.shape[1])
@@ -84,7 +95,7 @@ tr, tr_l = undersample.fit_resample(train_set, train_label.values)
 # We let the model overfit
 opt = tf.optimizers.Adam()
 model.compile(loss='sparse_categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
-history = model.fit(train_set, train_label, validation_split=0.2, epochs=250, batch_size=512)
+history = model.fit(train_set, train_label, epochs=130, batch_size=512)
 
 # Performances on training set
 train_prediction = model.predict(train_set)
@@ -99,10 +110,10 @@ report = classification_report(test_label, test_prediction)
 print(report)
 
 # Saving the model
-model.save('nn_blackbox.h5')
+model.save('nn_blackbox_regularized.h5')
 
 plt.plot(history.history['loss'])
-plt.plot(history.history['val_loss'])
+# plt.plot(history.history['val_loss'])
 plt.title('model loss')
 plt.ylabel('loss')
 plt.xlabel('epoch')

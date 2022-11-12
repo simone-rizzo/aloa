@@ -334,9 +334,8 @@ class Original_lblonly(Attack):
 
 from multiprocessing import Process
 
-
-def go_attack(NOISE_SAMPLES,ds_name,settings,):
-    bb = NeuralNetworkBlackBox(db_name=ds_name)
+def go_attack(NOISE_SAMPLES, ds_name, settings, regularized):
+    bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
     att = Original_lblonly(bb, NOISE_SAMPLES, db_name=ds_name, settings=settings)
     att.start_attack()
 
@@ -346,17 +345,14 @@ if __name__ == "__main__":
     # bb = RandomForestBlackBox()
     models = []
     ds_names = ['adult', 'bank', 'synth']
-    settings = [0, 0, 0] # first is shadow model or not, second train model or not, third perturbation algorithm.
+    # first is shadow model or not, second train model or not, third perturbation algorithm.
     config_settings = [[0, 0, 0], [1, 1, 1]]
     threads = []
     for sett in config_settings:
         for ds_name in ds_names:
-            p = Process(target=go_attack, args=(NOISE_SAMPLES, ds_name, sett,))
-            p.start()
-            threads.append(p)
+            for regularized in [False, True]:
+                p = Process(target=go_attack, args=(NOISE_SAMPLES, ds_name, sett,))
+                p.start()
+                threads.append(p)
     for p in threads:
         p.join()
-    # NOISE_SAMPLES = int(sys.argv[1]) if len(sys.argv)> 1 else NOISE_SAMPLES
-    # att = Original_lblonly(bb, NOISE_SAMPLES, True, db_name=ds_name, settings=settings)
-    # att.start_attack()
-    # print(settings)
