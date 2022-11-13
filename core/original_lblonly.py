@@ -1,6 +1,7 @@
 import os
 import sys
 
+from bboxes.dtbb import DecisionTreeBlackBox
 from core.attack_model import AttackModel
 
 file_dir = os.path.dirname("..")
@@ -27,6 +28,8 @@ class Original_lblonly(Attack):
         self.settings = settings
         self.scaler = None
         self.N_SHADOW_MODELS = 4
+        self.model_type_folder = "regularized" if bb.regularized else "overfitted"
+        self.model_name = bb.model_name
 
     def robustness_score_label(self, model, dataset, label, n, scaler=None):
         """
@@ -112,7 +115,7 @@ class Original_lblonly(Attack):
             tr, tr_l = undersample.fit_resample(tr, tr_l)
 
             # we train the model.
-            shadow = self.bb.train_model(tr, tr_l, epochs = 250 )
+            shadow = self.bb.train_model(tr, tr_l)
 
             # Report on training set
             pred_tr_labels = shadow.predict(tr)
@@ -156,7 +159,7 @@ class Original_lblonly(Attack):
         to imitate the black-box model.
         :return:
         """
-        source_model = self.bb.train_model(self.noise_train_set.values, self.noise_train_label.values, epochs=250)
+        source_model = self.bb.train_model(self.noise_train_set.values, self.noise_train_label.values)
         pred_tr_labels = source_model.predict(self.noise_train_set.values)
         tr_report = classification_report(self.noise_train_label, pred_tr_labels)
         print("Train report")
@@ -291,26 +294,22 @@ class Original_lblonly(Attack):
             pred = mdl.predict(np.array(self.noise_data_scores).reshape(-1, 1))
             report = classification_report(self.noise_data_label, pred)
             print(report)
-            f = open("../results/{}/nn/originallblonly_attack_tr_{}.txt".format(self.db_name, self.settings), "w")
+            f = open("../results/{}/{}/{}/originallblonly_attack_tr_{}.txt".format(self.db_name, self.model_name, self.model_type_folder, self.settings), "w")
             f.write(report)
             f.close()
             # Evaluation attack model
             pred = mdl.predict(np.array(self.bb_data_scores).reshape(-1, 1))
             report = classification_report(self.bb_data_label, pred)
-            self.save_roc_curve_data(self.bb_data_label, pred, "../results/{}/nn/originallblonly_attack_roc_{}.csv".format(self.db_name, self.settings))
+            self.save_roc_curve_data(self.bb_data_label, pred, "../results/{}/{}/{}/originallblonly_attack_roc_{}.csv".format(self.db_name, self.model_name, self.model_type_folder, self.settings))
             print("Final")
             print(report)
-            f = open("../results/{}/nn/originallblonly_attack_ts_{}.txt".format(self.db_name, self.settings), "w")
-            f.write(report)
-            f.close()
-
-            f = open("../lblonly_improvments/{}/{}.txt".format(self.db_name, self.settings), "w")
+            f = open("../results/{}/{}/{}/originallblonly_attack_ts_{}.txt".format(self.db_name,self.model_name, self.model_type_folder, self.settings), "w")
             f.write(report)
             f.close()
         else:
             acc_source, t, prec_source, tprec, report = self.get_max_accuracy(self.noise_data_label, self.noise_data_scores)
             print(report)
-            f = open("../results/{}/nn/originallblonly_attack_tr_{}.txt".format(self.db_name, self.settings), "w")
+            f = open("../results/{}/{}/{}/originallblonly_attack_tr_{}.txt".format(self.db_name, self.model_name, self.model_type_folder, self.settings), "w")
             f.write(report)
             f.write("\nThreshold choosed {}".format(t))
             f.close()
@@ -318,41 +317,22 @@ class Original_lblonly(Attack):
             print(report)
 
             out = [1 if m > t else 0 for m in self.bb_data_scores]
-            self.save_roc_curve_data(self.bb_data_label, out, "../results/{}/nn/originallblonly_attack_roc_{}.csv".format(self.db_name, self.settings))
+            self.save_roc_curve_data(self.bb_data_label, out, "../results/{}/{}/{}/originallblonly_attack_roc_{}.csv".format(self.db_name, self.model_name, self.model_type_folder, self.settings))
 
             print("Threshold choosed {}".format(t))
-            f = open("../results/{}/nn/originallblonly_attack_ts_{}.txt".format(self.db_name, self.settings), "w")
+            f = open("../results/{}/{}/{}/originallblonly_attack_ts_{}.txt".format(self.db_name, self.model_name, self.model_type_folder, self.settings), "w")
             f.write(report)
             f.write("\nThreshold choosed {}".format(t))
             f.close()
-
-            f = open("../lblonly_improvments/{}/{}.txt".format(self.db_name, self.settings), "w")
-            f.write(report)
-            f.write("\nThreshold choosed {}".format(t))
-            f.close()
-
-
-from multiprocessing import Process
-
-def go_attack(NOISE_SAMPLES, ds_name, settings, regularized):
-    bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
-    att = Original_lblonly(bb, NOISE_SAMPLES, db_name=ds_name, settings=settings)
-    att.start_attack()
 
 
 if __name__ == "__main__":
     NOISE_SAMPLES = 1000
-    # bb = RandomForestBlackBox()
-    models = []
-    ds_names = ['adult', 'bank', 'synth']
-    # first is shadow model or not, second train model or not, third perturbation algorithm.
-    config_settings = [[0, 0, 0], [1, 1, 1]]
-    threads = []
-    for sett in config_settings:
-        for ds_name in ds_names:
-            for regularized in [False, True]:
-                p = Process(target=go_attack, args=(NOISE_SAMPLES, ds_name, sett,))
-                p.start()
-                threads.append(p)
-    for p in threads:
-        p.join()
+    ds_name = 'synth'
+    regularized = True
+    setting = [0, 0, 0]
+    bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
+    # bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized)
+    # bb = RandomForestBlackBox(db_name=ds_name, regularized=regularized)
+    att = Original_lblonly(bb, NOISE_SAMPLES, db_name=ds_name, settings=setting)
+    att.start_attack()

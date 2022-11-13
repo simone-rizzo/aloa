@@ -34,6 +34,8 @@ class ConfidenceAttack(Attack):
         self.N_SHADOW_MODELS = N_SHADOW_MODELS
         self.shadow_models = []
         self.multy_attack = multy_attack
+        self.model_type_folder = "regularized" if bb.regularized else "overfitted"
+        self.model_name = bb.model_name
 
     def train_shadow_models(self):
         self.tr_chunk_size = ceil(self.noise_train_set.shape[0] / self.N_SHADOW_MODELS)  # chunk for the train set.
@@ -107,9 +109,9 @@ class ConfidenceAttack(Attack):
             pred = mdl.predict(train_set.values)
             report = classification_report(train_label, pred)
             print(report)
-            """f = open("../results/{}/nn/confidence_attack_tr.txt".format(self.db_name), "a")
+            f = open("../results/{}/{}/{}/confidence_attack_tr.txt".format(self.db_name, self.model_name, self.model_type_folder), "w")
             f.write(report)
-            f.close()"""
+            f.close()
 
             # Prediction and report of the performances.
             pred = mdl.predict(test_set.values)
@@ -194,14 +196,15 @@ class ConfidenceAttack(Attack):
             report = classification_report(ts_l, out)
             self.save_roc_curve_data(ts_l.values, out, "../results/{}/nn/{}.csv".format(self.db_name, "confidence_roc"))
             print("Result:")
-            """f = open("../results/{}/nn/confidence_attack_ts.txt".format(self.db_name), "a")
+            f = open("../results/{}/{}/{}/confidence_attack_ts.txt".format(self.db_name, self.model_name,
+                                                                              self.model_type_folder),"w")
             f.write(report)
-            f.close()"""
+            f.close()
             print(report)
-            print("Th model")
+            """print("Th model")
             pred = list(map(lambda x: 0 if max(x) < self.th else 1, df_new.values))
             report = classification_report(ts_l, pred)
-            print(report)
+            print(report)"""
         else:
             for c, i in enumerate(classes):
                 print("Results for class: {}".format(c))
@@ -243,8 +246,9 @@ if __name__ == "__main__":
     N_SHADOW_MODELS = 2
     # bb = RandomForestBlackBox()
     ds_name = 'adult'
-    # bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=True)
-    bb = DecisionTreeBlackBox(db_name=ds_name, regularized=False)
-    # bb = RandomForestBlackBox(db_name=ds_name, regularized=True)
+    regularized = False
+    bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
+    # bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized)
+    # bb = RandomForestBlackBox(db_name=ds_name, regularized=regularized)
     att = ConfidenceAttack(bb, N_SHADOW_MODELS, db_name=ds_name, multy_attack=False)
     att.start_attack()

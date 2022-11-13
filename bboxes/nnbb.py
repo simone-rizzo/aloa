@@ -37,6 +37,8 @@ def normalize(ds, scaler=None, dataframe=True, db_name='adult'):
 
 class NeuralNetworkBlackBox(SklearnClassifierWrapper):
     def __init__(self, model=None, scaler=None, db_name=None, regularized=False):
+        self.regularized = regularized
+        self.model_name = "nn"
         if model:
             self.model = model
             self.scaler = scaler

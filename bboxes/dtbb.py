@@ -8,6 +8,8 @@ import pickle
 
 class DecisionTreeBlackBox(SklearnClassifierWrapper):
     def __init__(self, db_name, regularized):
+        self.regularized = regularized
+        self.model_name = "dt"
         if not regularized:
             filename = "../models/{}/dt/dt_blackbox.sav".format(db_name)
             self.model = pickle.load(open(filename, 'rb'))

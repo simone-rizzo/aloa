@@ -7,6 +7,8 @@ import pickle
 
 class RandomForestBlackBox(SklearnClassifierWrapper):
     def __init__(self, db_name, regularized):
+        self.regularized = regularized
+        self.model_name = "rf"
         if not regularized:
             filename = "../models/{}/rf/rf_blackbox.sav".format(db_name)
             self.model = pickle.load(open(filename, 'rb'))
