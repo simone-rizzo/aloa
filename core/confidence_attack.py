@@ -194,7 +194,7 @@ class ConfidenceAttack(Attack):
             df_new.pop("class_labels")
             out = att_c.predict(df_new.values)
             report = classification_report(ts_l, out)
-            self.save_roc_curve_data(ts_l.values, out, "../results/{}/nn/{}.csv".format(self.db_name, "confidence_roc"))
+            self.save_roc_curve_data(ts_l.values, out, "../results/{}/{}/{}.csv".format(self.db_name,self.model_name, "confidence_roc"))
             print("Result:")
             f = open("../results/{}/{}/{}/confidence_attack_ts.txt".format(self.db_name, self.model_name,
                                                                               self.model_type_folder),"w")
@@ -245,8 +245,8 @@ class ConfidenceAttack(Attack):
 if __name__ == "__main__":
     N_SHADOW_MODELS = 2
     # bb = RandomForestBlackBox()
-    ds_name = 'adult'
-    regularized = False
+    ds_name = 'synth'
+    regularized = True
     bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
     # bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized)
     # bb = RandomForestBlackBox(db_name=ds_name, regularized=regularized)

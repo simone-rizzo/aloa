@@ -328,11 +328,11 @@ class Original_lblonly(Attack):
 
 if __name__ == "__main__":
     NOISE_SAMPLES = 1000
-    ds_name = 'synth'
-    regularized = True
-    setting = [0, 0, 0]
-    bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
+    ds_name = 'adult'
+    regularized = False
+    setting = [1, 1, 1]
+    # bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
     # bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized)
-    # bb = RandomForestBlackBox(db_name=ds_name, regularized=regularized)
+    bb = RandomForestBlackBox(db_name=ds_name, regularized=regularized)
     att = Original_lblonly(bb, NOISE_SAMPLES, db_name=ds_name, settings=setting)
     att.start_attack()

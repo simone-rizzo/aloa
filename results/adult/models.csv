@@ -1,0 +1,7 @@
+model, TR Accuracy, TS Accuracy
+DT regularize, 0.84, 0.61
+DT overfitted, 1.0, 0.59
+RF regularize, 0.98, 0.87
+RF overfitted, 1.0, 0.89
+NN regularize, 0.93, 0.92
+NN overfitted, 1.0, 0.90
