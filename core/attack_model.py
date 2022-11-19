@@ -3,6 +3,10 @@ from tensorflow.keras import layers
 import tensorflow as tf
 import numpy as np
 
+"""
+Attack model object, which trains to detect 0-1 label meaning in training or not in training.
+"""
+
 
 class AttackModel:
     def __init__(self, data, target, attack_type="confidence"):

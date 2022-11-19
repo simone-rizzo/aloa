@@ -7,4 +7,4 @@
    macro avg       0.77      0.60      0.53      1202
 weighted avg       0.77      0.60      0.53      1202
 
-Threshold choosed 0.0
+Threshold choosed 0.056

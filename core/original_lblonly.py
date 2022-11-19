@@ -40,7 +40,7 @@ class Original_lblonly(Attack):
         :param n: number of perturbations.
         :return: score of robustness is a value 0<rob_score<1
         """
-        fb = 0.60  # probability of flipping one bit.
+        fb = 0.7  # probability of flipping one bit.
         con_vals = 6  # number of continues values before the bit ones.
         percentage_deviation = (0.1, 0.50)  # min max of the percentage of the value to add or subtrack.
         scores = []
@@ -325,14 +325,41 @@ class Original_lblonly(Attack):
             f.write("\nThreshold choosed {}".format(t))
             f.close()
 
+from multiprocessing import Pool
+
+
+def worker_start(att_conf, NOISE_SAMPLES):
+    ds_name = att_conf['ds_name']
+    bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=att_conf['regularized'])
+    att = Original_lblonly(bb, NOISE_SAMPLES, db_name=ds_name, settings=att_conf['setting'])
+    att.start_attack()
+
 
 if __name__ == "__main__":
     NOISE_SAMPLES = 1000
-    ds_name = 'adult'
+    """ds_name = 'synth'
     regularized = False
-    setting = [1, 1, 1]
-    # bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
+    setting = [1, 1, 0]
+    bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
     # bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized)
-    bb = RandomForestBlackBox(db_name=ds_name, regularized=regularized)
+    # bb = RandomForestBlackBox(db_name=ds_name, regularized=regularized)
     att = Original_lblonly(bb, NOISE_SAMPLES, db_name=ds_name, settings=setting)
-    att.start_attack()
+    att.start_attack()"""
+    ds_names = ['adult', 'bank', 'synth']
+    settings = [[0, 0, 1],
+                [0, 1, 0],
+                [0, 1, 1],
+                [1, 0, 0],
+                [1, 0, 1],
+                [1, 1, 0]]
+    list_of_attacks = []
+    for ds_name in ds_names:
+        for sett in settings:
+            list_of_attacks.append({'ds_name': ds_name, 'setting': sett, 'regularized': True})
+    pool = Pool(processes=12)
+    for att in list_of_attacks:
+        pool.apply_async(worker_start, args=(att, NOISE_SAMPLES))
+    # close the process pool
+    pool.close()
+    # wait for all tasks to finish
+    pool.join()
