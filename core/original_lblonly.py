@@ -1,3 +1,4 @@
+import math
 import os
 import sys
 
@@ -9,7 +10,6 @@ sys.path.append(file_dir)
 from core.attack import Attack
 from bboxes.nnbb import NeuralNetworkBlackBox
 from bboxes.rfbb import RandomForestBlackBox
-from core.my_lblonly import neighborhood_noise, bernoulli_noise
 import pandas as pd
 from math import ceil
 from imblearn.under_sampling import RandomUnderSampler
@@ -20,6 +20,36 @@ from tqdm import tqdm
 from sklearn.utils import shuffle
 from sklearn.metrics import roc_curve, accuracy_score, precision_score, classification_report
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
+import math
+
+
+def bernoulli_noise(bin_values, p):
+    """
+    :param bin_values: index of the column in which we have binary values.
+    :param p: porbability of changing the value.
+    :return:
+    """
+    for i in range(len(bin_values)):
+        r = np.random.uniform(0, 1)
+        if r <= p:
+            bin_values[i] = math.fabs(bin_values[i]-1)
+    return bin_values
+
+
+def neighborhood_noise(values, pd):
+    """
+    :param values: continuous values to be perturbed
+    :param pd: percentage deviation (min, max) is the percentage of the value to add or subtrack.
+    :return:
+    """
+    for i in range(len(values)):
+        r = np.random.uniform(pd[0], pd[1])
+        r = round(r, 2)
+        if np.random.randint(2, size=1)[0] == 1:  # 50% of probability to be added or subtracted
+            r *= -1
+        values[i] += round(values[i] * r, 3)
+    return values
+
 
 class Original_lblonly(Attack):
     def __init__(self, bb, NOISE_SAMPLES, db_name='adult', settings=[0, 0, 0]):
@@ -330,7 +360,7 @@ from multiprocessing import Pool
 
 def worker_start(att_conf, NOISE_SAMPLES):
     ds_name = att_conf['ds_name']
-    bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=att_conf['regularized'])
+    bb = DecisionTreeBlackBox(db_name=ds_name, regularized=att_conf['regularized'])
     att = Original_lblonly(bb, NOISE_SAMPLES, db_name=ds_name, settings=att_conf['setting'])
     att.start_attack()
 
@@ -355,7 +385,7 @@ if __name__ == "__main__":
     list_of_attacks = []
     for ds_name in ds_names:
         for sett in settings:
-            list_of_attacks.append({'ds_name': ds_name, 'setting': sett, 'regularized': True})
+            list_of_attacks.append({'ds_name': ds_name, 'setting': sett, 'regularized': False})
     pool = Pool(processes=12)
     for att in list_of_attacks:
         pool.apply_async(worker_start, args=(att, NOISE_SAMPLES))
