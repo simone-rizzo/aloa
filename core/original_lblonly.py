@@ -385,7 +385,7 @@ if __name__ == "__main__":
     list_of_attacks = []
     for ds_name in ds_names:
         for sett in settings:
-            list_of_attacks.append({'ds_name': ds_name, 'setting': sett, 'regularized': False})
+            list_of_attacks.append({'ds_name': ds_name, 'setting': sett, 'regularized': True})
     pool = Pool(processes=12)
     for att in list_of_attacks:
         pool.apply_async(worker_start, args=(att, NOISE_SAMPLES))
