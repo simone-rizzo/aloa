@@ -360,7 +360,7 @@ from multiprocessing import Pool
 
 def worker_start(att_conf, NOISE_SAMPLES):
     ds_name = att_conf['ds_name']
-    bb = DecisionTreeBlackBox(db_name=ds_name, regularized=att_conf['regularized'])
+    bb = RandomForestBlackBox(db_name=ds_name, regularized=att_conf['regularized'])
     att = Original_lblonly(bb, NOISE_SAMPLES, db_name=ds_name, settings=att_conf['setting'])
     att.start_attack()
 

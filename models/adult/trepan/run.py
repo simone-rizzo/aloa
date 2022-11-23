@@ -36,9 +36,9 @@ root = Trepan.build_tree(MIN_EXAMPLES_PER_NODE, MAX_NODES, trainX, oracle)
 # calculate fidelity
 num_test_examples = testX.shape[0]
 correct = 0
-ann_prediction = oracle.get_oracle_label(trainX)
+ann_prediction = oracle.get_oracle_label(testX)
 for i in range(0, num_test_examples):
-    tree_prediction = root.classify(trainX[i, :])
+    tree_prediction = root.classify(testX[i, :])
     correct += (ann_prediction[i] == tree_prediction)
 
 fidelity = float(correct) / num_test_examples

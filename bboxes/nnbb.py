@@ -47,11 +47,11 @@ class NeuralNetworkBlackBox(SklearnClassifierWrapper):
         else:
             self.db_name = db_name
             if regularized:
-                self.model = keras.models.load_model("../models/{}/nn/nn_blackbox_regularized.h5".format(db_name))
-                self.scaler = pickle.load(open("../models/{}/nn/nn_scaler_regularized.sav".format(db_name), 'rb'))
+                self.model = keras.models.load_model("../../../models/{}/nn/nn_blackbox_regularized.h5".format(db_name))
+                self.scaler = pickle.load(open("../../../models/{}/nn/nn_scaler_regularized.sav".format(db_name), 'rb'))
             else:
-                self.model = keras.models.load_model("../models/{}/nn/nn_blackbox.h5".format(db_name))
-                self.scaler = pickle.load(open("../models/{}/nn/nn_scaler.sav".format(db_name), 'rb'))
+                self.model = keras.models.load_model("../../../models/{}/nn/nn_blackbox.h5".format(db_name))
+                self.scaler = pickle.load(open("../../../models/{}/nn/nn_scaler.sav".format(db_name), 'rb'))
 
     def model(self):
         return self.model()
