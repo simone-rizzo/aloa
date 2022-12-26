@@ -7,15 +7,19 @@ import pickle
 
 
 class DecisionTreeBlackBox(SklearnClassifierWrapper):
-    def __init__(self, db_name, regularized):
+    def __init__(self, db_name, regularized, explainer=False):
         self.regularized = regularized
         self.model_name = "dt"
-        if not regularized:
-            filename = "../models/{}/dt/dt_blackbox.sav".format(db_name)
+        if explainer:
+            filename = "../new_trepan/nn_explainer.sav".format(db_name)
             self.model = pickle.load(open(filename, 'rb'))
         else:
-            filename = "../models/{}/dt/dt_blackbox_regularized.sav".format(db_name)
-            self.model = pickle.load(open(filename, 'rb'))
+            if not regularized:
+                filename = "../models/{}/dt/dt_blackbox.sav".format(db_name)
+                self.model = pickle.load(open(filename, 'rb'))
+            else:
+                filename = "../models/{}/dt/dt_blackbox_regularized.sav".format(db_name)
+                self.model = pickle.load(open(filename, 'rb'))
 
     def model(self):
         return self.model
@@ -34,7 +38,7 @@ class DecisionTreeBlackBox(SklearnClassifierWrapper):
 
 if __name__ == "__main__":
     db_name = "adult"
-    bb = DecisionTreeBlackBox(db_name=db_name, regularized=False)
+    bb = DecisionTreeBlackBox(db_name=db_name, regularized=False, explainer=True)
     import pandas as pd
     train_set = pd.read_csv("../data/{}/original_train_set.csv".format(db_name))
     test_set = pd.read_csv("../data/{}/original_test_set.csv".format(db_name))

@@ -52,7 +52,7 @@ def neighborhood_noise(values, pd):
 
 
 class Original_lblonly(Attack):
-    def __init__(self, bb, NOISE_SAMPLES, db_name='adult', settings=[0, 0, 0]):
+    def __init__(self, bb, NOISE_SAMPLES, db_name='adult', settings=[0, 0, 0], write_files=True):
         super().__init__(bb, database_name=db_name)
         self.NOISE_SAMPLES = NOISE_SAMPLES
         self.settings = settings
@@ -60,6 +60,7 @@ class Original_lblonly(Attack):
         self.N_SHADOW_MODELS = 4
         self.model_type_folder = "regularized" if bb.regularized else "overfitted"
         self.model_name = bb.model_name
+        self.write_files = write_files
 
     def robustness_score_label(self, model, dataset, label, n, scaler=None):
         """
@@ -305,11 +306,13 @@ class Original_lblonly(Attack):
         # Saving score ts
         tmp = pd.DataFrame(self.bb_data_scores, columns=['score'])
         tmp['taget'] = self.bb_data_label
-        tmp.to_csv("./test_score_dataset.csv", index=False)
+        if self.write_files:
+            tmp.to_csv("./test_score_dataset.csv", index=False)
         # Save score tr
         tmp2 = pd.DataFrame(self.noise_data_scores, columns=['score'])
         tmp2['taget'] = self.noise_data_label
-        tmp2.to_csv("./train_score_dataset.csv", index=False)
+        if self.write_files:
+            tmp2.to_csv("./train_score_dataset.csv", index=False)
 
 
     def train_test_attackmodel(self):
@@ -324,36 +327,43 @@ class Original_lblonly(Attack):
             pred = mdl.predict(np.array(self.noise_data_scores).reshape(-1, 1))
             report = classification_report(self.noise_data_label, pred)
             print(report)
-            f = open("../results/{}/{}/{}/originallblonly_attack_tr_{}.txt".format(self.db_name, self.model_name, self.model_type_folder, self.settings), "w")
-            f.write(report)
-            f.close()
+            if self.write_files:
+                f = open("../results/{}/{}/{}/originallblonly_attack_tr_{}.txt".format(self.db_name, self.model_name, self.model_type_folder, self.settings), "w")
+                f.write(report)
+                f.close()
             # Evaluation attack model
             pred = mdl.predict(np.array(self.bb_data_scores).reshape(-1, 1))
             report = classification_report(self.bb_data_label, pred)
-            self.save_roc_curve_data(self.bb_data_label, pred, "../results/{}/{}/{}/originallblonly_attack_roc_{}.csv".format(self.db_name, self.model_name, self.model_type_folder, self.settings))
+            if self.write_files:
+                self.save_roc_curve_data(self.bb_data_label, pred, "../results/{}/{}/{}/originallblonly_attack_roc_{}.csv".format(self.db_name, self.model_name, self.model_type_folder, self.settings))
             print("Final")
             print(report)
-            f = open("../results/{}/{}/{}/originallblonly_attack_ts_{}.txt".format(self.db_name,self.model_name, self.model_type_folder, self.settings), "w")
-            f.write(report)
-            f.close()
+            if self.write_files:
+                f = open("../results/{}/{}/{}/originallblonly_attack_ts_{}.txt".format(self.db_name,self.model_name, self.model_type_folder, self.settings), "w")
+                f.write(report)
+                f.close()
         else:
             acc_source, t, prec_source, tprec, report = self.get_max_accuracy(self.noise_data_label, self.noise_data_scores)
             print(report)
-            f = open("../results/{}/{}/{}/originallblonly_attack_tr_{}.txt".format(self.db_name, self.model_name, self.model_type_folder, self.settings), "w")
-            f.write(report)
-            f.write("\nThreshold choosed {}".format(t))
-            f.close()
+            if self.write_files:
+                f = open("../results/{}/{}/{}/originallblonly_attack_tr_{}.txt".format(self.db_name, self.model_name, self.model_type_folder, self.settings), "w")
+                f.write(report)
+                f.write("\nThreshold choosed {}".format(t))
+                f.close()
             acc_test_t, _, _, _, report = self.get_max_accuracy(self.bb_data_label, self.bb_data_scores, thresholds=[t])
             print(report)
 
             out = [1 if m > t else 0 for m in self.bb_data_scores]
-            self.save_roc_curve_data(self.bb_data_label, out, "../results/{}/{}/{}/originallblonly_attack_roc_{}.csv".format(self.db_name, self.model_name, self.model_type_folder, self.settings))
+            if self.write_files:
+                self.save_roc_curve_data(self.bb_data_label, out, "../results/{}/{}/{}/originallblonly_attack_roc_{}.csv".format(self.db_name, self.model_name, self.model_type_folder, self.settings))
 
             print("Threshold choosed {}".format(t))
-            f = open("../results/{}/{}/{}/originallblonly_attack_ts_{}.txt".format(self.db_name, self.model_name, self.model_type_folder, self.settings), "w")
-            f.write(report)
-            f.write("\nThreshold choosed {}".format(t))
-            f.close()
+            if self.write_files:
+                f = open("../results/{}/{}/{}/originallblonly_attack_ts_{}.txt".format(self.db_name, self.model_name, self.model_type_folder, self.settings), "w")
+                f.write(report)
+                f.write("\nThreshold choosed {}".format(t))
+                f.close()
+
 
 from multiprocessing import Pool
 
@@ -367,15 +377,15 @@ def worker_start(att_conf, NOISE_SAMPLES):
 
 if __name__ == "__main__":
     NOISE_SAMPLES = 1000
-    """ds_name = 'synth'
+    ds_name = 'adult'
     regularized = False
-    setting = [1, 1, 0]
-    bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
-    # bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized)
+    setting = [0, 0, 0]
+    # bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
+    bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized, explainer=True)
     # bb = RandomForestBlackBox(db_name=ds_name, regularized=regularized)
-    att = Original_lblonly(bb, NOISE_SAMPLES, db_name=ds_name, settings=setting)
-    att.start_attack()"""
-    ds_names = ['adult', 'bank', 'synth']
+    att = Original_lblonly(bb, NOISE_SAMPLES, db_name=ds_name, settings=setting, write_files=False)
+    att.start_attack()
+    """ds_names = ['adult', 'bank', 'synth']
     settings = [[0, 0, 1],
                 [0, 1, 0],
                 [0, 1, 1],
@@ -392,4 +402,4 @@ if __name__ == "__main__":
     # close the process pool
     pool.close()
     # wait for all tasks to finish
-    pool.join()
+    pool.join()"""
