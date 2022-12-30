@@ -1,9 +1,10 @@
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
 from sklearn.tree import DecisionTreeClassifier
-
+from sklearn import metrics
 from bboxes.bb_wrapper import SklearnClassifierWrapper
 import pickle
+import matplotlib.pyplot as plt
 
 
 class DecisionTreeBlackBox(SklearnClassifierWrapper):
@@ -42,7 +43,7 @@ class DecisionTreeBlackBox(SklearnClassifierWrapper):
 
 if __name__ == "__main__":
     db_name = "adult"
-    bb = DecisionTreeBlackBox(db_name=db_name, regularized=False, explainer=True)
+    bb = DecisionTreeBlackBox(db_name=db_name, regularized=False, explainer=False)
     import pandas as pd
     train_set = pd.read_csv("../data/{}/original_train_set.csv".format(db_name))
     test_set = pd.read_csv("../data/{}/original_test_set.csv".format(db_name))
@@ -59,3 +60,18 @@ if __name__ == "__main__":
     test_prediction = bb.predict(test_set.values)
     report = classification_report(test_label, test_prediction)
     print(report)
+
+    # create ROC curve
+    bb_r = DecisionTreeBlackBox(db_name=db_name, regularized=True, explainer=False)
+    test_prediction_r = bb_r.predict(test_set.values)
+    fpr, tpr, _ = metrics.roc_curve(test_label, test_prediction)
+    plt.plot(fpr, tpr, label="overfitted")
+    fpr, tpr, _ = metrics.roc_curve(test_label, test_prediction_r)
+    plt.plot(fpr, tpr, label="regularized")
+    plt.plot([0.10 * i for i in range(11)], [0.10 * i for i in range(11)], '--', c="red")
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    plt.title("ROC curve on test")
+    plt.legend()
+    plt.grid()
+    plt.show()

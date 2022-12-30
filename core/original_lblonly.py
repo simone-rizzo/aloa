@@ -378,7 +378,7 @@ def worker_start(att_conf, NOISE_SAMPLES):
 if __name__ == "__main__":
     NOISE_SAMPLES = 1000
     ds_name = 'adult'
-    regularized = False
+    regularized = True
     setting = [0, 0, 0]
     # bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
     bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized, explainer=True)
