@@ -35,22 +35,26 @@ def train_explainer(best_param, tr_set, tr_label, ts_set, ts_label, path_tuple, 
     dt.fit(tr_set, tr_label)
     predictions1 = dt.predict(tr_set)
     report = classification_report(tr_label, predictions1)
+    write_report = open("./explainers/{}/{}/{}/best_param{}.txt".format('adult', path_tuple[0], path_tuple[1],
+                                                                       "_lssdpt" if lss_dpt else ""), "w")
+    write_report.write(str(best_param))
+    write_report.close()
 
-    write_report = open("./explainers/{}/{}/{}/tr_report{}.txt".format('adult', path_tuple[0], path_tuple[1], "_lssdpt" if lss_dpt else ""), "w")
+    write_report = open("./explainers/{}/{}/{}/tr_fidelity{}.txt".format('adult', path_tuple[0], path_tuple[1], "_lssdpt" if lss_dpt else ""), "w")
     write_report.write(report)
     write_report.close()
 
     predictions = dt.predict(ts_set)
     report = classification_report(ts_label, predictions)
 
-    write_report = open("./explainers/{}/{}/{}/ts_report{}.txt".format('adult', path_tuple[0], path_tuple[1], "_lssdpt" if lss_dpt else ""), "w")
+    write_report = open("./explainers/{}/{}/{}/ts_fidelity{}.txt".format('adult', path_tuple[0], path_tuple[1], "_lssdpt" if lss_dpt else ""), "w")
     write_report.write(report)
     write_report.close()
 
     # Train fidelity
     fidelity_train = dt.predict(train_set)
     report = classification_report(train_label, fidelity_train)
-    write_report = open("./explainers/{}/{}/{}/tr_report_fidelity{}.txt".format('adult', path_tuple[0], path_tuple[1],
+    write_report = open("./explainers/{}/{}/{}/tr_original{}.txt".format('adult', path_tuple[0], path_tuple[1],
                                                                        "_lssdpt" if lss_dpt else ""), "w")
     write_report.write(report)
     write_report.close()
@@ -59,7 +63,7 @@ def train_explainer(best_param, tr_set, tr_label, ts_set, ts_label, path_tuple, 
     fidelity_test = dt.predict(test_set)
     report = classification_report(test_label, fidelity_test)
     write_report = open(
-        "./explainers/{}/{}/{}/ts_report_fidelity{}.txt".format('adult', path_tuple[0], path_tuple[1],
+        "./explainers/{}/{}/{}/ts_original{}.txt".format('adult', path_tuple[0], path_tuple[1],
                                                                 "_lssdpt" if lss_dpt else ""), "w")
     write_report.write(report)
     write_report.close()
@@ -87,7 +91,7 @@ o_test_set = pd.read_csv("../data/{}/original_test_set.csv".format(db_name))
 o_train_label = pd.read_csv("../data/{}/original_train_label.csv".format(db_name))
 o_test_label = pd.read_csv("../data/{}/original_test_label.csv".format(db_name))"""
 ds_names = ['adult']
-regularizeds = [False]
+regularizeds = [True, False]
 dt_best_hyperparams = [{'criterion': 'entropy', 'max_depth': 80, 'max_features': 'auto', 'min_samples_leaf': 3, 'min_samples_split': 30}, {'criterion': 'gini', 'max_depth': 13, 'splitter': 'best', 'max_features': None, 'min_samples_leaf': 1, 'min_samples_split': 2}]
 # For each dataset we have
 for i, ds_name in enumerate(ds_names):

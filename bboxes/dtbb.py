@@ -13,10 +13,8 @@ class DecisionTreeBlackBox(SklearnClassifierWrapper):
         self.model_name = "dt"
         if explainer:
             # We import the regularized explainer meaning it has less depth better explainability.
-            if regularized:
-                filename = "../new_trepan/nn_less_depth.sav".format(db_name)
-            else:
-                filename = "../new_trepan/nn_explainer.sav".format(db_name)
+
+            filename = "../new_trepan/explainers/{}/rf/regularized/explainer{}.sav".format(db_name, "_lssdpt" if regularized else "")
             self.model = pickle.load(open(filename, 'rb'))
         else:
             if not regularized:
