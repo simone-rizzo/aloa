@@ -25,8 +25,8 @@ def new_score_sorting(config_list, gs_scores):
         new_sr = new_score(sr, depth, weight_accuracy=0.2, weight_depth=0.1)
         scores.append((new_sr, sr, depth, conf))
     scores.sort(key=lambda x: x[0], reverse=True)
-    for s in scores:
-        print("new_score:{} acc:{} depth:{}".format(round(s[0], 2), s[1], s[2]))
+    """for s in scores:
+        print("new_score:{} acc:{} depth:{}".format(round(s[0], 2), s[1], s[2]))"""
     return scores[0][3]
 
 

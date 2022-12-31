@@ -8,13 +8,16 @@ import matplotlib.pyplot as plt
 
 
 class DecisionTreeBlackBox(SklearnClassifierWrapper):
-    def __init__(self, db_name, regularized, explainer=False):
+    def __init__(self, db_name, regularized, explainer=False, model_name='dt', lss_dpt=False):
         self.regularized = regularized
-        self.model_name = "dt"
+        self.model_name = model_name
+        self.lss_dpt = lss_dpt
+        self.explainer = explainer
         if explainer:
             # We import the regularized explainer meaning it has less depth better explainability.
-
-            filename = "../new_trepan/explainers/{}/rf/regularized/explainer{}.sav".format(db_name, "_lssdpt" if regularized else "")
+            filename = "../new_trepan/explainers/{}/{}/{}/explainer{}.sav".format(
+                db_name, "rf", "regularized" if regularized else "overfitted",
+                "_lssdpt" if lss_dpt else "")
             self.model = pickle.load(open(filename, 'rb'))
         else:
             if not regularized:

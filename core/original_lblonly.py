@@ -209,7 +209,21 @@ class Original_lblonly(Attack):
             self.train_shadow_models()
 
         self.perturb_datasets()
-        self.train_test_attackmodel()
+        report, report2 = self.train_test_attackmodel()
+        if self.bb.explainer:
+            f = open("../new_trepan/explainers/{}/{}/{}/attack_tr_{}{}.txt".format(self.db_name, self.bb.model_name,
+                                                                                   self.model_type_folder, self.settings, "_lssdpt" if self.bb.lss_dpt else ""),
+                     "w")
+            f.write(report)
+            f.close()
+
+            f = open("../new_trepan/explainers/{}/{}/{}/attack_ts_{}{}.txt".format(self.db_name, self.bb.model_name,
+                                                                                   self.model_type_folder, self.settings,
+                                                                                   "_lssdpt" if self.bb.lss_dpt else ""),
+                     "w")
+            f.write(report2)
+            f.close()
+
 
     def get_max_accuracy(self, y_true, probs, thresholds=None):
         """Return the max accuracy possible given the correct labels and guesses. Will try all thresholds unless passed.
@@ -314,7 +328,6 @@ class Original_lblonly(Attack):
         if self.write_files:
             tmp2.to_csv("./train_score_dataset.csv", index=False)
 
-
     def train_test_attackmodel(self):
         # Undersampling for 50-50 balanced test set.
         undersample = RandomUnderSampler(sampling_strategy="majority")
@@ -333,15 +346,16 @@ class Original_lblonly(Attack):
                 f.close()
             # Evaluation attack model
             pred = mdl.predict(np.array(self.bb_data_scores).reshape(-1, 1))
-            report = classification_report(self.bb_data_label, pred)
+            report2 = classification_report(self.bb_data_label, pred)
             if self.write_files:
                 self.save_roc_curve_data(self.bb_data_label, pred, "../results/{}/{}/{}/originallblonly_attack_roc_{}.csv".format(self.db_name, self.model_name, self.model_type_folder, self.settings))
             print("Final")
-            print(report)
+            print(report2)
             if self.write_files:
                 f = open("../results/{}/{}/{}/originallblonly_attack_ts_{}.txt".format(self.db_name,self.model_name, self.model_type_folder, self.settings), "w")
-                f.write(report)
+                f.write(report2)
                 f.close()
+            return report, report2
         else:
             acc_source, t, prec_source, tprec, report = self.get_max_accuracy(self.noise_data_label, self.noise_data_scores)
             print(report)
@@ -350,8 +364,8 @@ class Original_lblonly(Attack):
                 f.write(report)
                 f.write("\nThreshold choosed {}".format(t))
                 f.close()
-            acc_test_t, _, _, _, report = self.get_max_accuracy(self.bb_data_label, self.bb_data_scores, thresholds=[t])
-            print(report)
+            acc_test_t, _, _, _, report2 = self.get_max_accuracy(self.bb_data_label, self.bb_data_scores, thresholds=[t])
+            print(report2)
 
             out = [1 if m > t else 0 for m in self.bb_data_scores]
             if self.write_files:
@@ -360,9 +374,10 @@ class Original_lblonly(Attack):
             print("Threshold choosed {}".format(t))
             if self.write_files:
                 f = open("../results/{}/{}/{}/originallblonly_attack_ts_{}.txt".format(self.db_name, self.model_name, self.model_type_folder, self.settings), "w")
-                f.write(report)
+                f.write(report2)
                 f.write("\nThreshold choosed {}".format(t))
                 f.close()
+            return report, report2
 
 
 from multiprocessing import Pool
@@ -380,11 +395,11 @@ if __name__ == "__main__":
     ds_name = 'adult'
     regularized = True
     setting = [0, 0, 0]
-    # bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
-    bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized, explainer=True)
+    """# bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
+    bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized, explainer=True, model_name='rf', lss_dpt=False)
     # bb = RandomForestBlackBox(db_name=ds_name, regularized=regularized)
     att = Original_lblonly(bb, NOISE_SAMPLES, db_name=ds_name, settings=setting, write_files=False)
-    att.start_attack()
+    att.start_attack()"""
     """ds_names = ['adult', 'bank', 'synth']
     settings = [[0, 0, 1],
                 [0, 1, 0],
@@ -403,3 +418,9 @@ if __name__ == "__main__":
     pool.close()
     # wait for all tasks to finish
     pool.join()"""
+    for model in ['dt', 'rf', 'nn']:
+        for lssdpt in [False, True]:
+            bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized, explainer=True, model_name=model, lss_dpt=lssdpt)
+            att = Original_lblonly(bb, NOISE_SAMPLES, db_name=ds_name, settings=setting, write_files=False)
+            att.start_attack()
+
