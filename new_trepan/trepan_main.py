@@ -73,15 +73,31 @@ def train_explainer(best_param, tr_set, tr_label, ts_set, ts_label, path_tuple, 
     write_report.close()
 
 
+def greater_than_85(config_list, gs_scores):
+    """
+    We select the model having accuracy greater
+    than 85 and the minimum number of depth.
+    :param config_list:
+    :param gs_scores:
+    :return:
+    """
+    coupled = [(gs_scores[i], conf['max_depth'], conf) for i, conf in enumerate(config_list)]
+    filtered = list(filter(lambda x: x[0] >= 0.85, coupled))
+    filtered.sort(key=lambda x: x[0], reverse=False)
+    print(filtered)
+    return filtered[0][2]
+
+
 def train_explainer_regularized(train_set, train_label, test_set, test_label, path_tuple):
-    tree_para = {'criterion': ['gini', 'entropy'], 'max_depth': [5, 6, 7, 8, 9],
+    tree_para = {'criterion': ['gini', 'entropy'], 'max_depth': [11, 12, 13],
                  'min_samples_split': [5, 10, 15, 25, 30, 50], 'min_samples_leaf': [3, 5, 15, 20, 40, 50],
                  'max_features': [1, 3, 5, 'auto', 'sqrt', 'log2']}
     grid = GridSearchCV(tree.DecisionTreeClassifier(), tree_para, cv=3, n_jobs=12, verbose=10, scoring='accuracy')
     grid.fit(train_set, train_label.ravel())
     configurations_list = grid.cv_results_['params']
     scores_list = grid.cv_results_['mean_test_score']
-    best_param = new_score_sorting(configurations_list, scores_list)
+    # best_param = new_score_sorting(configurations_list, scores_list)
+    best_param = greater_than_85(configurations_list, scores_list)
     train_explainer(best_param, train_set, train_label, test_set, test_label, path_tuple, lss_dpt=True)
 
 
@@ -91,7 +107,8 @@ o_test_set = pd.read_csv("../data/{}/original_test_set.csv".format(db_name))
 o_train_label = pd.read_csv("../data/{}/original_train_label.csv".format(db_name))
 o_test_label = pd.read_csv("../data/{}/original_test_label.csv".format(db_name))"""
 ds_names = ['adult']
-regularizeds = [True, False]
+# regularizeds = [True, False]
+regularizeds = [False]
 dt_best_hyperparams = [{'criterion': 'entropy', 'max_depth': 80, 'max_features': 'auto', 'min_samples_leaf': 3, 'min_samples_split': 30}, {'criterion': 'gini', 'max_depth': 13, 'splitter': 'best', 'max_features': None, 'min_samples_leaf': 1, 'min_samples_split': 2}]
 # For each dataset we have
 for i, ds_name in enumerate(ds_names):
@@ -103,12 +120,12 @@ for i, ds_name in enumerate(ds_names):
     bboxes = []
     # Here we allocate the 6 different bboxes
     for regularized in regularizeds:
-        dt = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized)
+        # dt = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized)
         rf = RandomForestBlackBox(db_name=ds_name, regularized=regularized)
-        nn = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
-        bboxes.append(dt)
+        # nn = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
+        # bboxes.append(dt)
         bboxes.append(rf)
-        bboxes.append(nn)
+        # bboxes.append(nn)
     for bb in tqdm(bboxes):
         filename = "explainer_"+bb.model_name+"_{}_".format("regularized" if bb.regularized else "overfitted")
         # Here we generate the new data according to Trepan

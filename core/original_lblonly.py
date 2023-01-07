@@ -393,7 +393,7 @@ def worker_start(att_conf, NOISE_SAMPLES):
 if __name__ == "__main__":
     NOISE_SAMPLES = 1000
     ds_name = 'adult'
-    regularized = True
+    regularized = False
     setting = [0, 0, 0]
     """# bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
     bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized, explainer=True, model_name='rf', lss_dpt=False)
@@ -418,6 +418,7 @@ if __name__ == "__main__":
     pool.close()
     # wait for all tasks to finish
     pool.join()"""
+    # Attack on explainer models
     for model in ['dt', 'rf', 'nn']:
         for lssdpt in [False, True]:
             bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized, explainer=True, model_name=model, lss_dpt=lssdpt)
