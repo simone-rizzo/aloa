@@ -33,7 +33,7 @@ class RandomForestBlackBox(SklearnClassifierWrapper):
 
 
 if __name__ == "__main__":
-    db_name = "adult"
+    db_name = "bank"
     bb = RandomForestBlackBox(db_name=db_name, regularized=False)
     import pandas as pd
     train_set = pd.read_csv("../data/{}/original_train_set.csv".format(db_name))
@@ -63,4 +63,14 @@ if __name__ == "__main__":
     plt.title("ROC curve on test")
     plt.legend()
     plt.grid()
+    plt.show()
+
+    from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
+    cm = confusion_matrix(test_label, test_prediction_r, labels=[0, 1])
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm,
+                                  display_labels=['<=50K', '>50k'])
+    disp.plot()
+    plt.title("Confution matrix of the RF classifier\n regularized accuracy:{}".format(
+        round(metrics.accuracy_score(test_label, test_prediction_r), 3)))
     plt.show()

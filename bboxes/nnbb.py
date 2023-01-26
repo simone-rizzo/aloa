@@ -8,7 +8,9 @@ import pickle
 import numpy as np
 import tensorflow as tf
 import os
-print(os.getcwd())
+import matplotlib.pyplot as plt
+from sklearn import metrics
+
 
 def normalize(ds, scaler=None, dataframe=True, db_name='adult'):
     """
@@ -112,7 +114,7 @@ class NeuralNetworkBlackBox(SklearnClassifierWrapper):
 
 
 if __name__ == "__main__":
-    db_name = "synth"
+    db_name = "bank"
     bb = NeuralNetworkBlackBox(db_name=db_name, regularized=False)
     import pandas as pd
     train_set = pd.read_csv("../data/{}/original_train_set.csv".format(db_name))
@@ -120,9 +122,6 @@ if __name__ == "__main__":
     train_label = pd.read_csv("../data/{}/original_train_label.csv".format(db_name))
     test_label = pd.read_csv("../data/{}/original_test_label.csv".format(db_name))
 
-    # Here we normalize the training set and the test set
-    """train_set, scaler = normalize(train_set)
-    test_set, _ = normalize(test_set, scaler)"""
 
     # Performances on training set
     train_prediction = bb.predict(train_set.values)
@@ -133,3 +132,28 @@ if __name__ == "__main__":
     test_prediction = bb.predict(test_set.values)
     report = classification_report(test_label, test_prediction)
     print(report)
+
+    # create ROC curve
+    bb_r = NeuralNetworkBlackBox(db_name=db_name, regularized=True)
+    test_prediction_r = bb_r.predict(test_set.values)
+    fpr, tpr, _ = metrics.roc_curve(test_label, test_prediction)
+    plt.plot(fpr, tpr, label="overfitted")
+    fpr, tpr, _ = metrics.roc_curve(test_label, test_prediction_r)
+    plt.plot(fpr, tpr, label="regularized")
+    plt.plot([0.10 * i for i in range(11)], [0.10 * i for i in range(11)], '--', c="red")
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    plt.title("ROC curve on test")
+    plt.legend()
+    plt.grid()
+    plt.show()
+
+    from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
+    cm = confusion_matrix(test_label, test_prediction_r, labels=[0, 1])
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm,
+                                  display_labels=['<=50K', '>50k'])
+    disp.plot()
+    plt.title("Confution matrix of the NN classifier\n regularized accuracy:{}".format(
+        round(metrics.accuracy_score(test_label, test_prediction_r), 3)))
+    plt.show()
