@@ -40,7 +40,7 @@ def neighborhood_noise(values, pd):
     """
     :param values: continuous values to be perturbed
     :param pd: percentage deviation (min, max) is the percentage of the value to add or subtrack.
-    :return:
+    :return: perturbed data.
     """
     for i in range(len(values)):
         r = np.random.uniform(pd[0], pd[1])
@@ -120,7 +120,7 @@ class Original_lblonly(Attack):
                     noise = stddev * np.random.randn(noise_samples, row.shape[-1])
                     x_noisy = x_sampled + noise
                     noise_values = model.predict(x_noisy)
-                    score = np.mean(np.array(list(map(lambda x: 1 if x == label else 0, noise_values))))
+                    score = np.mean(np.array(list(map(lambda x: 1 if x == y else 0, noise_values))))
                     scores.append(score)
             else:  # Miss classification
                 scores.append(0)
@@ -211,18 +211,25 @@ class Original_lblonly(Attack):
         self.perturb_datasets()
         report, report2 = self.train_test_attackmodel()
         if self.bb.explainer:
-            f = open("../new_trepan/explainers/{}/{}/{}/attack_tr_{}{}.txt".format(self.db_name, self.bb.model_name,
-                                                                                   self.model_type_folder, self.settings, "_lssdpt" if self.bb.lss_dpt else ""),
-                     "w")
-            f.write(report)
-            f.close()
+            if not self.bb.depth:
+                f = open("../new_trepan/explainers/{}/{}/{}/attack_tr_{}{}.txt".format(self.db_name, self.bb.model_name,
+                                                                                       self.model_type_folder, self.settings, "_lssdpt" if self.bb.lss_dpt else ""),
+                         "w")
+                f.write(report)
+                f.close()
 
-            f = open("../new_trepan/explainers/{}/{}/{}/attack_ts_{}{}.txt".format(self.db_name, self.bb.model_name,
-                                                                                   self.model_type_folder, self.settings,
-                                                                                   "_lssdpt" if self.bb.lss_dpt else ""),
-                     "w")
-            f.write(report2)
-            f.close()
+                f = open("../new_trepan/explainers/{}/{}/{}/attack_ts_{}{}.txt".format(self.db_name, self.bb.model_name,
+                                                                                       self.model_type_folder, self.settings,
+                                                                                       "_lssdpt" if self.bb.lss_dpt else ""),
+                         "w")
+                f.write(report2)
+                f.close()
+            else:
+                with open("../new_trepan/xai_tradeoff/{}/attack_tr.txt".format(self.bb.depth), "w") as f:
+                    f.write(report)
+                with open("../new_trepan/xai_tradeoff/{}/attack_ts.txt".format(self.bb.depth), "w") as f:
+                    f.write(report2)
+
 
 
     def get_max_accuracy(self, y_true, probs, thresholds=None):
@@ -274,7 +281,6 @@ class Original_lblonly(Attack):
             indexes = np.random.choice(self.noise_train_set.shape[0], self.noise_test_set.shape[0], replace=False)
             if self.settings[2] == 0:
                 print("Generating with paper noise")
-                # Shadow data
                 tr_scores = self.carlini_binary_rand_robust(self.shadow_model, self.noise_train_set.values[indexes], self.noise_train_label.values[indexes],
                                                             noise_samples=self.NOISE_SAMPLES, p=0.6, scaler=self.scaler)
                 ts_scores = self.carlini_binary_rand_robust(self.shadow_model, self.noise_test_set.values, self.noise_test_label.values,
@@ -320,13 +326,13 @@ class Original_lblonly(Attack):
         # Saving score ts
         tmp = pd.DataFrame(self.bb_data_scores, columns=['score'])
         tmp['taget'] = self.bb_data_label
-        if self.write_files:
-            tmp.to_csv("./test_score_dataset.csv", index=False)
+        # if self.write_files:
+        tmp.to_csv("./test_score_dataset.csv", index=False)
         # Save score tr
         tmp2 = pd.DataFrame(self.noise_data_scores, columns=['score'])
         tmp2['taget'] = self.noise_data_label
-        if self.write_files:
-            tmp2.to_csv("./train_score_dataset.csv", index=False)
+        # if self.write_files:
+        tmp2.to_csv("./train_score_dataset.csv", index=False)
 
     def train_test_attackmodel(self):
         # Undersampling for 50-50 balanced test set.
@@ -395,11 +401,11 @@ if __name__ == "__main__":
     ds_name = 'adult'
     regularized = False
     setting = [0, 0, 0]
-    """# bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
-    bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized, explainer=True, model_name='rf', lss_dpt=False)
+    bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
+    # bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized, explainer=True, model_name='rf', lss_dpt=False)
     # bb = RandomForestBlackBox(db_name=ds_name, regularized=regularized)
     att = Original_lblonly(bb, NOISE_SAMPLES, db_name=ds_name, settings=setting, write_files=False)
-    att.start_attack()"""
+    att.start_attack()
     """ds_names = ['adult', 'bank', 'synth']
     settings = [[0, 0, 1],
                 [0, 1, 0],
@@ -419,9 +425,9 @@ if __name__ == "__main__":
     # wait for all tasks to finish
     pool.join()"""
     # Attack on explainer models
-    for model in ['dt', 'rf', 'nn']:
-        for lssdpt in [False, True]:
-            bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized, explainer=True, model_name=model, lss_dpt=lssdpt)
+    """for model in ['nn']:
+        for i in tqdm(range(2, 80, 2)):
+            bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized, explainer=True, model_name=model, lss_dpt=False, depth=i)
             att = Original_lblonly(bb, NOISE_SAMPLES, db_name=ds_name, settings=setting, write_files=False)
-            att.start_attack()
+            att.start_attack()"""
 

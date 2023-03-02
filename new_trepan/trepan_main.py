@@ -10,7 +10,7 @@ from sklearn.model_selection import GridSearchCV
 from new_trepan.trepan_generation import TrePanGenerator
 import numpy as np
 from tqdm import tqdm
-
+import os
 
 def new_score(accuracy, depth, weight_accuracy=1.0, weight_depth=1.0):
     score = (weight_accuracy * accuracy) + (weight_depth * (1 / depth))
@@ -28,6 +28,37 @@ def new_score_sorting(config_list, gs_scores):
     """for s in scores:
         print("new_score:{} acc:{} depth:{}".format(round(s[0], 2), s[1], s[2]))"""
     return scores[0][3]
+
+
+def train_explainer_for_plot(best_param, tr_set, tr_label, ts_set, ts_label, n_dept):
+    """
+    Only for Adult dataset and only for nn overfitted.
+    :param best_param:
+    :param tr_set:
+    :param tr_label:
+    :param ts_set:
+    :param ts_label:
+    :return:
+    """
+    dt = tree.DecisionTreeClassifier(**best_param)
+    dt.fit(tr_set, tr_label)
+    path_to_save = "./xai_tradeoff/{}".format(n_dept[0])
+    if not os.path.exists(path_to_save):
+        os.makedirs(path_to_save)
+    with open(path_to_save+"/best_param.txt", "w") as f:
+        f.write(str(best_param))
+    tr_fidelity = dt.predict(tr_set)
+    report_tr_fidelity = classification_report(tr_label, tr_fidelity)
+    # Save the tr fidelity
+    with open(path_to_save+"/tr_fidelity.txt", "w") as f:
+        f.write(report_tr_fidelity)
+    ts_fidelity = dt.predict(ts_set)
+    report_ts_fidelity = classification_report(ts_label, ts_fidelity)
+    # Save the ts fidelity
+    with open(path_to_save+"/ts_fidelity.txt", "w") as f:
+        f.write(report_ts_fidelity)
+    # Save the model
+    pickle.dump(dt, open(path_to_save+"/model.sav", 'wb'))
 
 
 def train_explainer(dataset_name, best_param, tr_set, tr_label, ts_set, ts_label, path_tuple, lss_dpt=False):
@@ -91,25 +122,31 @@ def greater_than_85(config_list, gs_scores):
     return filtered[0][2]
 
 
-def train_explainer_regularized(ds_name, train_set, train_label, test_set, test_label, path_tuple):
-    tree_para = {'criterion': ['gini', 'entropy'], 'max_depth': [8, 9, 10, 11, 12, 13],
+def train_explainer_regularized(ds_name, train_set, train_label, test_set, test_label, path_tuple, max_depth_l=[8, 9, 10, 11, 12, 13]):
+    tree_para = {'criterion': ['gini', 'entropy'], 'max_depth': max_depth_l,
                  'min_samples_split': [5, 10, 15, 25, 30, 50], 'min_samples_leaf': [3, 5, 15, 20, 40, 50],
-                 'max_features': [1, 3, 5, 'auto', 'sqrt', 'log2']}
+                 'max_features': [5, 'auto', 'sqrt', 'log2']}
     grid = GridSearchCV(tree.DecisionTreeClassifier(), tree_para, cv=3, n_jobs=12, verbose=10, scoring='accuracy')
     grid.fit(train_set, train_label.ravel())
     configurations_list = grid.cv_results_['params']
     scores_list = grid.cv_results_['mean_test_score']
+    # Select the way you want to perform the model selection
     # best_param = new_score_sorting(configurations_list, scores_list)
-    best_param = greater_than_85(configurations_list, scores_list)
-    train_explainer(ds_name, best_param, train_set, train_label, test_set, test_label, path_tuple, lss_dpt=True)
+    # best_param = greater_than_85(configurations_list, scores_list)
+    best_param = grid.best_params_
+    # normal training of the explainer
+    # train_explainer(ds_name, best_param, train_set, train_label, test_set, test_label, path_tuple, lss_dpt=True)
+    train_explainer_for_plot(best_param, train_set, train_label, test_set, test_label, max_depth_l)
 
 
-ds_names = ['bank', 'synth']
-regularizeds = [True, False]
+
+ds_names = ['adult']
+regularizeds = [False]
 dt_best_hyperparams = [
-    {'criterion': 'entropy', 'max_depth': 80, 'max_features': 'auto', 'min_samples_leaf': 3, 'min_samples_split': 30},
+    {'criterion': 'entropy', 'max_depth': 20, 'max_features': 5, 'min_samples_leaf': 40, 'min_samples_split': 50},
     {'criterion': 'gini', 'max_depth': 13, 'splitter': 'best', 'max_features': None, 'min_samples_leaf': 1,
-     'min_samples_split': 2}]
+     'min_samples_split': 2},
+]
 # For each dataset we have
 for i, ds_name in enumerate(ds_names):
     # We load the dataset data
@@ -120,28 +157,26 @@ for i, ds_name in enumerate(ds_names):
     bboxes = []
     # Here we allocate the 6 different bboxes
     for regularized in regularizeds:
-        dt = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized)
-        rf = RandomForestBlackBox(db_name=ds_name, regularized=regularized)
+        # dt = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized)
+        # rf = RandomForestBlackBox(db_name=ds_name, regularized=regularized)
         nn = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
-        bboxes.append(dt)
-        bboxes.append(rf)
+        # bboxes.append(dt)
+        # bboxes.append(rf)
         bboxes.append(nn)
     for bb in tqdm(bboxes):
         filename = "explainer_" + bb.model_name + "_{}_".format("regularized" if bb.regularized else "overfitted")
         # Here we generate the new data according to Trepan
         generator = TrePanGenerator()
-        gen = generator.generate(train_set.values, oracle=bb, size=70000)
+        gen = generator.generate(train_set.values, oracle=bb, size=50000)
         data_l = gen[:, -1]
         data = np.delete(gen, -1, axis=1)
-
-        # Train with the best hyperparams
         tr_set, ts_set, tr_label, ts_label = train_test_split(data, data_l, stratify=data_l,
                                                               test_size=0.20, random_state=0)
 
         # Best params
-        train_explainer(ds_name, dt_best_hyperparams[i], tr_set, tr_label, ts_set, ts_label,
-                        (bb.model_name, "regularized" if bb.regularized else "overfitted"))
+        """train_explainer(ds_name, dt_best_hyperparams[i], tr_set, tr_label, ts_set, ts_label,
+                        (bb.model_name, "regularized" if bb.regularized else "overfitted"))"""
         # Regolarized with less depth
-        train_explainer_regularized(ds_name, tr_set, tr_label, ts_set, ts_label,
-                                    (bb.model_name, "regularized" if bb.regularized else "overfitted"))
-        # print("finished")
+        for j in tqdm(range(2, 80, 2)):
+            train_explainer_regularized(ds_name, tr_set, tr_label, ts_set, ts_label,
+                                        (bb.model_name, "regularized" if bb.regularized else "overfitted"), max_depth_l=[j])

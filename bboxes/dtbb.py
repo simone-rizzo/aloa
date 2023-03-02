@@ -8,16 +8,20 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 
 class DecisionTreeBlackBox(SklearnClassifierWrapper):
-    def __init__(self, db_name, regularized, explainer=False, model_name='dt', lss_dpt=False):
+    def __init__(self, db_name, regularized, explainer=False, model_name='dt', lss_dpt=False, depth=None):
         self.regularized = regularized
         self.model_name = model_name
         self.lss_dpt = lss_dpt
         self.explainer = explainer
+        self.depth = depth
         if explainer:
             # We import the regularized explainer meaning it has less depth better explainability.
-            filename = "../new_trepan/explainers/{}/{}/{}/explainer{}.sav".format(
-                db_name, "rf", "regularized" if regularized else "overfitted",
-                "_lssdpt" if lss_dpt else "")
+            if not depth:
+                filename = "../new_trepan/explainers/{}/{}/{}/explainer{}.sav".format(
+                    db_name, "rf", "regularized" if regularized else "overfitted",
+                    "_lssdpt" if lss_dpt else "")
+            else:
+                filename = "../new_trepan/xai_tradeoff/{}/model.sav".format(depth)
             self.model = pickle.load(open(filename, 'rb'))
         else:
             if not regularized:

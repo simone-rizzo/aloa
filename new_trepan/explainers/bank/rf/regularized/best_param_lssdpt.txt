@@ -1,0 +1,1 @@
+{'criterion': 'gini', 'max_depth': 11, 'max_features': 1, 'min_samples_leaf': 15, 'min_samples_split': 50}

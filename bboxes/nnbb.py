@@ -10,7 +10,7 @@ import tensorflow as tf
 import os
 import matplotlib.pyplot as plt
 from sklearn import metrics
-
+import pandas as pd
 
 def normalize(ds, scaler=None, dataframe=True, db_name='adult'):
     """
@@ -114,7 +114,7 @@ class NeuralNetworkBlackBox(SklearnClassifierWrapper):
 
 
 if __name__ == "__main__":
-    db_name = "bank"
+    db_name = "adult"
     bb = NeuralNetworkBlackBox(db_name=db_name, regularized=False)
     import pandas as pd
     train_set = pd.read_csv("../data/{}/original_train_set.csv".format(db_name))
@@ -125,13 +125,24 @@ if __name__ == "__main__":
 
     # Performances on training set
     train_prediction = bb.predict(train_set.values)
+    train_confidence = bb.predict_proba(train_set.values)
     report = classification_report(train_label, train_prediction)
     print(report)
 
     # Performances on test set
     test_prediction = bb.predict(test_set.values)
+    test_confidence = bb.predict_proba(test_set.values)
     report = classification_report(test_label, test_prediction)
     print(report)
+
+    jointed = list(map(lambda x: np.max(x), test_confidence))
+    jointed2 = list(map(lambda x: np.max(x), train_confidence))
+    jointed = np.concatenate([jointed, jointed2], axis=0)
+
+    target = np.concatenate([np.ones(test_set.shape[0]), np.zeros(train_set.shape[0])], axis=0)
+    df = pd.DataFrame(target, columns=['target'])
+    df['confidence'] = jointed
+    df.to_csv("./confidence_distrib.csv")
 
     # create ROC curve
     bb_r = NeuralNetworkBlackBox(db_name=db_name, regularized=True)
