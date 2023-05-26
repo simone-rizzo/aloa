@@ -468,9 +468,9 @@ if __name__ == "__main__":
     # wait for all tasks to finish
     pool.join()"""
     # Attack on explainer models"""
-    """for model in ['nn', 'rf', 'dt']:
+    for model in ['nn', 'rf', 'dt']:
         for lss_dpt in [True, False]:
                 bb = DecisionTreeBlackBox(db_name='bank', regularized=False, explainer=True, model_name=model, lss_dpt=lss_dpt)
                 att = Original_lblonly(bb, NOISE_SAMPLES, db_name='bank', settings=[0, 0, 1], write_files=False)
-                att.start_attack()"""
+                att.start_attack()
 
