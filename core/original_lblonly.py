@@ -57,7 +57,7 @@ class Original_lblonly(Attack):
         self.NOISE_SAMPLES = NOISE_SAMPLES
         self.settings = settings
         self.scaler = None
-        self.N_SHADOW_MODELS = 4
+        self.N_SHADOW_MODELS = 3
         self.model_type_folder = "regularized" if bb.regularized else "overfitted"
         self.model_name = bb.model_name
         self.write_files = write_files
@@ -97,6 +97,53 @@ class Original_lblonly(Attack):
                 scores.append(0)
             index += 1
         return scores
+
+    def neighborhood_noise2(self, vect, N, pd):
+        """
+        Optimized version of the neighborhood noise
+        """
+        pmin = pd[0]
+        pmax = pd[1]
+        # Create a matrix by duplicating vect N times
+        vect_matrix = np.tile(vect, (N, 1))
+
+        # Create a matrix of percentage perturbations to be applied to vect_matrix
+        sampl = np.random.uniform(low=pmin, high=pmax, size=(N, len(vect)))
+        # Vector for adding or subtracking a value
+        sum_sub = np.random.choice([-1, 1], size=(N, len(vect)))
+        # Here we apply the perturbation perturb
+        vect_matrix = vect_matrix + (vect_matrix * (sum_sub * sampl))
+        return vect_matrix
+
+    def robustness_score_label2(self, model, dataset, label, n, scaler=None):
+        """
+        Compute the robustness score for each row inside the dataset with the true label passed
+        as parameter and in case of miss classification we set the score to 0.
+        :param model: model to get the labels.
+        :param dataset:
+        :param n: number of perturbations.
+        :return: score of robustness is a value 0<rob_score<1
+        """
+        fb = 0.7  # probability of flipping one bit.
+        con_vals = 6  # number of continues values before the bit ones.
+        percentage_deviation = (0.1, 0.50)  # min max of the percentage of the value to add or subtrack.
+        scores = []
+        index = 0
+        for row in tqdm(dataset):
+            variations = []
+            y_true = label[index]
+            y_predicted = model.predict(np.array([row]))[0]
+            if y_true == y_predicted:
+                perturbed_row = row.copy()
+                variations = self.neighborhood_noise2(perturbed_row, n, percentage_deviation)
+                output = model.predict(variations)
+                score = np.mean(np.array(list(map(lambda x: 1 if x == y_true else 0, output))))
+                scores.append(score)
+            else:
+                scores.append(0)
+            index += 1
+        return scores
+
 
     def carlini_binary_rand_robust(self, model, ds, ds_label, p, noise_samples=100, stddev=0.040, scaler=None):
         index = 0
@@ -154,7 +201,7 @@ class Original_lblonly(Attack):
             if self.settings[2] == 0:
                 pred_tr_robustness = self.carlini_binary_rand_robust(shadow, tr[indexes], tr_l[indexes], noise_samples=self.NOISE_SAMPLES, p=0.6)
             else:
-                pred_tr_robustness = self.robustness_score_label(shadow, tr[indexes], tr_l[indexes], self.NOISE_SAMPLES, scaler=self.scaler) # old implementation
+                pred_tr_robustness = self.robustness_score_label2(shadow, tr[indexes], tr_l[indexes], self.NOISE_SAMPLES, scaler=self.scaler) # old implementation
 
             df_in = pd.DataFrame(pred_tr_robustness)
             df_in["class_label"] = pred_tr_labels[indexes]
@@ -168,7 +215,7 @@ class Original_lblonly(Attack):
             # Test
             pred_labels = shadow.predict(ts)
             if self.settings[2] == 0:
-                pred_ts_robustness = self.robustness_score_label(shadow, ts, ts_l, self.NOISE_SAMPLES, scaler=self.scaler) # old implementation
+                pred_ts_robustness = self.robustness_score_label2(shadow, ts, ts_l, self.NOISE_SAMPLES, scaler=self.scaler) # old implementation
             else:
                 pred_ts_robustness = self.carlini_binary_rand_robust(shadow, ts, ts_l, noise_samples=self.NOISE_SAMPLES, p=0.6)
             df_out = pd.DataFrame(pred_ts_robustness)
@@ -277,20 +324,20 @@ class Original_lblonly(Attack):
     def perturb_datasets(self):
         # We merge the scores for the shadow perturbed data and we assign (1-0 in out label)
         if self.settings[0] == 0:
-            self.noise_data_label = np.concatenate([np.ones(self.noise_test_set.shape[0]), np.zeros(self.noise_test_set.shape[0])], axis=0)
-            indexes = np.random.choice(self.noise_train_set.shape[0], self.noise_test_set.shape[0], replace=False)
+            self.noise_data_label = np.concatenate([np.ones(self.noise_train_set.shape[0]), np.zeros(self.noise_test_set.shape[0])], axis=0)
+            indexes = np.random.choice(500, 500, replace=False)
             if self.settings[2] == 0:
                 print("Generating with paper noise")
-                tr_scores = self.carlini_binary_rand_robust(self.shadow_model, self.noise_train_set.values[indexes], self.noise_train_label.values[indexes],
+                tr_scores = self.carlini_binary_rand_robust(self.shadow_model, self.noise_train_set.values, self.noise_train_label.values,
                                                             noise_samples=self.NOISE_SAMPLES, p=0.6, scaler=self.scaler)
                 ts_scores = self.carlini_binary_rand_robust(self.shadow_model, self.noise_test_set.values, self.noise_test_label.values,
                                                             noise_samples=self.NOISE_SAMPLES, p=0.6, scaler=self.scaler)
             else:
                 print("Generating with our noise")
-                tr_scores = self.robustness_score_label(self.shadow_model, self.noise_train_set.values[indexes],
-                                                            self.noise_train_label.values[indexes],
+                tr_scores = self.robustness_score_label2(self.shadow_model, self.noise_train_set.values,
+                                                            self.noise_train_label.values,
                                                             n=self.NOISE_SAMPLES)
-                ts_scores = self.robustness_score_label(self.shadow_model, self.noise_test_set.values,
+                ts_scores = self.robustness_score_label2(self.shadow_model, self.noise_test_set.values,
                                                             self.noise_test_label.values, n=self.NOISE_SAMPLES)
 
             # We merge the test and train balanced datasets.
@@ -303,42 +350,43 @@ class Original_lblonly(Attack):
 
 
         # We merge the scores for the blackbox perturbed data and we assign (1-0 in out label)
-        self.bb_data_label = np.concatenate([np.ones(self.test_set.shape[0]), np.zeros(self.test_set.shape[0])],
-                                            axis=0)
-        indexes = np.random.choice(self.train_set.shape[0], self.test_set.shape[0], replace=False)
+        indexes = np.random.choice(300, 300, replace=False)
+
         if self.settings[2] == 0:
             # Blackbox data
-            target_tr_scores = self.carlini_binary_rand_robust(self.bb, self.train_set.values[indexes],
-                                                               self.train_label.values[indexes],
+            target_tr_scores = self.carlini_binary_rand_robust(self.bb, self.train_set.values,
+                                                               self.train_label.values,
                                                                noise_samples=self.NOISE_SAMPLES, p=0.6,
                                                                scaler=self.scaler)
             target_ts_scores = self.carlini_binary_rand_robust(self.bb, self.test_set.values, self.test_label.values,
                                                                noise_samples=self.NOISE_SAMPLES, p=0.6, scaler=self.scaler)
         else:
             # Blackbox data
-            target_tr_scores = self.robustness_score_label(self.bb, self.train_set.values[indexes], self.train_label.values[indexes],
+            target_tr_scores = self.robustness_score_label2(self.bb, self.train_set.values, self.train_label.values,
                                                                n=self.NOISE_SAMPLES)
-            target_ts_scores = self.robustness_score_label(self.bb, self.test_set.values, self.test_label.values,
+            target_ts_scores = self.robustness_score_label2(self.bb, self.test_set.values, self.test_label.values,
                                                            n=self.NOISE_SAMPLES)
 
-
+        self.bb_data_label = np.concatenate([np.ones(len(target_tr_scores)), np.zeros(len(target_ts_scores))],
+                                            axis=0)
         self.bb_data_scores = np.concatenate([target_tr_scores, target_ts_scores], axis=0)
         # Saving score ts
         tmp = pd.DataFrame(self.bb_data_scores, columns=['score'])
         tmp['taget'] = self.bb_data_label
         # if self.write_files:
-        tmp.to_csv("./test_score_dataset.csv", index=False)
+        # tmp.to_csv("./test_score_dataset.csv", index=False)
         # Save score tr
         tmp2 = pd.DataFrame(self.noise_data_scores, columns=['score'])
         tmp2['taget'] = self.noise_data_label
         # if self.write_files:
-        tmp2.to_csv("./train_score_dataset.csv", index=False)
+        # tmp2.to_csv("./train_score_dataset.csv", index=False)
 
     def train_test_attackmodel(self):
-        # Undersampling for 50-50 balanced test set.
+        # Undersampling for 50-50 balanced test set. comment these 3 lines below to have back unbalanced classes
         undersample = RandomUnderSampler(sampling_strategy="majority")
         self.bb_data_scores, self.bb_data_label = undersample.fit_resample(self.bb_data_scores.reshape(-1, 1), self.bb_data_label)
         self.bb_data_scores = np.ndarray.flatten(self.bb_data_scores)
+
         # get the test accuracy at the threshold selected on the source data
         if self.settings[1] == 1:
             mdl = AttackModel(np.array(self.noise_data_scores).reshape(-1, 1), self.noise_data_label, attack_type='perturb')
@@ -391,32 +439,27 @@ from multiprocessing import Pool
 
 def worker_start(att_conf, NOISE_SAMPLES):
     ds_name = att_conf['ds_name']
-    bb = RandomForestBlackBox(db_name=ds_name, regularized=att_conf['regularized'])
+    bb = DecisionTreeBlackBox(db_name=ds_name, regularized=att_conf['regularized'])
     att = Original_lblonly(bb, NOISE_SAMPLES, db_name=ds_name, settings=att_conf['setting'])
     att.start_attack()
 
 
 if __name__ == "__main__":
     NOISE_SAMPLES = 1000
-    ds_name = 'adult'
+    ds_name = 'bank'
     regularized = False
-    setting = [0, 0, 0]
-    bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
-    # bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized, explainer=True, model_name='rf', lss_dpt=False)
+    setting = [0, 0, 1]
+    # bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
+    bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized)
     # bb = RandomForestBlackBox(db_name=ds_name, regularized=regularized)
     att = Original_lblonly(bb, NOISE_SAMPLES, db_name=ds_name, settings=setting, write_files=False)
     att.start_attack()
-    """ds_names = ['adult', 'bank', 'synth']
-    settings = [[0, 0, 1],
-                [0, 1, 0],
-                [0, 1, 1],
-                [1, 0, 0],
-                [1, 0, 1],
-                [1, 1, 0]]
+    """ds_names = ['bank']
+    settings = [[0, 0, 0]]
     list_of_attacks = []
     for ds_name in ds_names:
         for sett in settings:
-            list_of_attacks.append({'ds_name': ds_name, 'setting': sett, 'regularized': True})
+            list_of_attacks.append({'ds_name': ds_name, 'setting': sett, 'regularized': False})
     pool = Pool(processes=12)
     for att in list_of_attacks:
         pool.apply_async(worker_start, args=(att, NOISE_SAMPLES))
@@ -424,10 +467,10 @@ if __name__ == "__main__":
     pool.close()
     # wait for all tasks to finish
     pool.join()"""
-    # Attack on explainer models
-    """for model in ['nn']:
-        for i in tqdm(range(2, 80, 2)):
-            bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized, explainer=True, model_name=model, lss_dpt=False, depth=i)
-            att = Original_lblonly(bb, NOISE_SAMPLES, db_name=ds_name, settings=setting, write_files=False)
-            att.start_attack()"""
+    # Attack on explainer models"""
+    """for model in ['nn', 'rf', 'dt']:
+        for lss_dpt in [True, False]:
+                bb = DecisionTreeBlackBox(db_name='bank', regularized=False, explainer=True, model_name=model, lss_dpt=lss_dpt)
+                att = Original_lblonly(bb, NOISE_SAMPLES, db_name='bank', settings=[0, 0, 1], write_files=False)
+                att.start_attack()"""
 

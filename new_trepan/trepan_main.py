@@ -12,6 +12,7 @@ import numpy as np
 from tqdm import tqdm
 import os
 
+
 def new_score(accuracy, depth, weight_accuracy=1.0, weight_depth=1.0):
     score = (weight_accuracy * accuracy) + (weight_depth * (1 / depth))
     return score
@@ -116,7 +117,7 @@ def greater_than_85(config_list, gs_scores):
     :return:
     """
     coupled = [(gs_scores[i], conf['max_depth'], conf) for i, conf in enumerate(config_list)]
-    filtered = list(filter(lambda x: x[0] >= 0.85, coupled))
+    filtered = list(filter(lambda x: x[0] >= 0.77, coupled))
     filtered.sort(key=lambda x: x[0], reverse=False)
     print(filtered)
     return filtered[0][2]
@@ -131,17 +132,17 @@ def train_explainer_regularized(ds_name, train_set, train_label, test_set, test_
     configurations_list = grid.cv_results_['params']
     scores_list = grid.cv_results_['mean_test_score']
     # Select the way you want to perform the model selection
-    # best_param = new_score_sorting(configurations_list, scores_list)
+    best_param = new_score_sorting(configurations_list, scores_list)
     # best_param = greater_than_85(configurations_list, scores_list)
-    best_param = grid.best_params_
+    # best_param = grid.best_params_
     # normal training of the explainer
-    # train_explainer(ds_name, best_param, train_set, train_label, test_set, test_label, path_tuple, lss_dpt=True)
-    train_explainer_for_plot(best_param, train_set, train_label, test_set, test_label, max_depth_l)
+    train_explainer(ds_name, best_param, train_set, train_label, test_set, test_label, path_tuple, lss_dpt=True)
+    # train_explainer_for_plot(best_param, train_set, train_label, test_set, test_label, max_depth_l)
 
 
 
-ds_names = ['adult']
-regularizeds = [False]
+ds_names = ['synth']
+regularizeds = [False, True]
 dt_best_hyperparams = [
     {'criterion': 'entropy', 'max_depth': 20, 'max_features': 5, 'min_samples_leaf': 40, 'min_samples_split': 50},
     {'criterion': 'gini', 'max_depth': 13, 'splitter': 'best', 'max_features': None, 'min_samples_leaf': 1,
@@ -157,11 +158,11 @@ for i, ds_name in enumerate(ds_names):
     bboxes = []
     # Here we allocate the 6 different bboxes
     for regularized in regularizeds:
-        # dt = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized)
-        # rf = RandomForestBlackBox(db_name=ds_name, regularized=regularized)
+        dt = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized)
+        rf = RandomForestBlackBox(db_name=ds_name, regularized=regularized)
         nn = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
-        # bboxes.append(dt)
-        # bboxes.append(rf)
+        bboxes.append(dt)
+        bboxes.append(rf)
         bboxes.append(nn)
     for bb in tqdm(bboxes):
         filename = "explainer_" + bb.model_name + "_{}_".format("regularized" if bb.regularized else "overfitted")
@@ -174,9 +175,8 @@ for i, ds_name in enumerate(ds_names):
                                                               test_size=0.20, random_state=0)
 
         # Best params
-        """train_explainer(ds_name, dt_best_hyperparams[i], tr_set, tr_label, ts_set, ts_label,
-                        (bb.model_name, "regularized" if bb.regularized else "overfitted"))"""
+        train_explainer(ds_name, dt_best_hyperparams[1], tr_set, tr_label, ts_set, ts_label,
+                        (bb.model_name, "regularized" if bb.regularized else "overfitted"))
         # Regolarized with less depth
-        for j in tqdm(range(2, 80, 2)):
-            train_explainer_regularized(ds_name, tr_set, tr_label, ts_set, ts_label,
-                                        (bb.model_name, "regularized" if bb.regularized else "overfitted"), max_depth_l=[j])
+        train_explainer_regularized(ds_name, tr_set, tr_label, ts_set, ts_label,
+                                        (bb.model_name, "regularized" if bb.regularized else "overfitted"), max_depth_l=[i for i in range(5, 20)])

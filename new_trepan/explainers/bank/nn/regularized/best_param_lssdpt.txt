@@ -1,1 +1,1 @@
-{'criterion': 'entropy', 'max_depth': 9, 'max_features': 1, 'min_samples_leaf': 15, 'min_samples_split': 30}
+{'criterion': 'gini', 'max_depth': 5, 'max_features': 5, 'min_samples_leaf': 20, 'min_samples_split': 5}

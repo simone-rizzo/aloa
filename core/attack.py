@@ -39,8 +39,11 @@ class Attack(metaclass=abc.ABCMeta):
         self.test_label = pd.read_csv("../data/{}/original_test_label.csv".format(self.db_name))
 
     def split_noise_dataset(self):
-        self.noise_train_set, self.noise_test_set, self.noise_train_label, self.noise_test_label = train_test_split(
+        """self.noise_train_set, self.noise_test_set, self.noise_train_label, self.noise_test_label = train_test_split(
             self.noise_train_set, self.noise_train_label, stratify=self.noise_train_label,
+            test_size=0.2, random_state=1)"""
+        self.noise_train_set, self.noise_test_set, self.noise_train_label, self.noise_test_label = train_test_split(
+            self.noise_train_set, self.noise_train_label,
             test_size=0.2, random_state=1)
 
     def eval_model(self, model, x, y):
