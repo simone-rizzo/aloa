@@ -6,7 +6,7 @@ __pycache__/
 # C extensions
 *.so
 
-new_trepan/trepan_dt_data.csv
+trepan_explainers/trepan_dt_data.csv
 
 # Distribution / packaging
 .Python

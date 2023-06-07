@@ -1,7 +1,6 @@
 import abc
 from bboxes.bbox import AbstractBBox
 
-
 class SklearnClassifierWrapper(AbstractBBox, metaclass=abc.ABCMeta):
 
     @abc.abstractmethod

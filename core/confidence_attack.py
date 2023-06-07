@@ -174,7 +174,7 @@ class ConfidenceAttack(Attack):
         df_out['target_label'] = 0
         df_out['class_labels'] = class_labels2
 
-        # Merge the lblonly_improvments
+        # Merge the test_lblonly_permutations
         df_final = pd.concat([df_in, df_out])
         classes = list(df_final['class_labels'].unique())
         print(df_final['target_label'].value_counts())
@@ -196,10 +196,19 @@ class ConfidenceAttack(Attack):
             report = classification_report(ts_l, out)
             self.save_roc_curve_data(ts_l.values, out, "../results/{}/{}/{}.csv".format(self.db_name,self.model_name, "confidence_roc"))
             print("Result:")
-            f = open("../results/{}/{}/{}/confidence_attack_ts.txt".format(self.db_name, self.model_name,
-                                                                              self.model_type_folder),"w")
-            f.write(report)
-            f.close()
+            if self.bb.explainer:
+                f = open(
+                    "../trepan_explainers/explainers/{}/{}/{}/confidence_attack_ts_{}.txt".format(self.db_name, self.bb.model_name,
+                                                                                  self.model_type_folder,
+                                                                                  "_lssdpt" if self.bb.lss_dpt else ""),
+                    "w")
+                f.write(report)
+                f.close()
+            else:
+                f = open("../results/{}/{}/{}/confidence_attack_ts.txt".format(self.db_name, self.model_name,
+                                                                                  self.model_type_folder),"w")
+                f.write(report)
+                f.close()
             print(report)
             """print("Th model")
             pred = list(map(lambda x: 0 if max(x) < self.th else 1, df_new.values))
@@ -243,12 +252,18 @@ class ConfidenceAttack(Attack):
 
 
 if __name__ == "__main__":
-    N_SHADOW_MODELS = 2
+    N_SHADOW_MODELS = 8
     # bb = RandomForestBlackBox()
     ds_name = 'synth'
     regularized = True
-    bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
+    # bb = NeuralNetworkBlackBox(db_name=ds_name, regularized=regularized)
     # bb = DecisionTreeBlackBox(db_name=ds_name, regularized=regularized)
     # bb = RandomForestBlackBox(db_name=ds_name, regularized=regularized)
-    att = ConfidenceAttack(bb, N_SHADOW_MODELS, db_name=ds_name, multy_attack=False)
-    att.start_attack()
+    # att = ConfidenceAttack(bb, N_SHADOW_MODELS, db_name=ds_name, multy_attack=False)
+    # att.start_attack()
+
+    for model in ['nn', 'rf', 'dt']:
+        for lss_dpt in [True, False]:
+                bb = DecisionTreeBlackBox(db_name=ds_name, regularized=True, explainer=True, model_name=model, lss_dpt=lss_dpt)
+                att = ConfidenceAttack(bb, N_SHADOW_MODELS, db_name=ds_name, multy_attack=False)
+                att.start_attack()
